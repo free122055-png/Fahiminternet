@@ -1,0 +1,8 @@
+{
+  "name": "Fahim Internet",
+  "description": "কম খরচে ইন্টারনেট, মিনিট ও বান্ডেল প্যাক কেনার সেরা বিশ্বস্ত প্ল্যাটফর্ম।",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

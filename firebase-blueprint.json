@@ -1,0 +1,277 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile data",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "phone": { "type": "string" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "user"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "fcmToken": { "type": "string" },
+        "lastCheckIn": { "type": "string", "format": "date-time" },
+        "balance": { "type": "number" },
+        "dataBalance": { "type": "number", "description": "Remaining GB" },
+        "minuteBalance": { "type": "number", "description": "Remaining Minutes" },
+        "smsBalance": { "type": "number", "description": "Remaining SMS" },
+        "isVerified": { "type": "boolean" },
+        "kycStatus": { "type": "string", "enum": ["none", "pending", "approved", "rejected"] }
+      },
+      "required": ["uid", "phone", "displayName", "role"]
+    },
+    "KYCSubmission": {
+      "title": "KYCSubmission",
+      "description": "User identification documents for verification",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "fullName": { "type": "string" },
+        "phone": { "type": "string" },
+        "nidNumber": { "type": "string" },
+        "nidFront": { "type": "string", "description": "Base64 or URL" },
+        "nidBack": { "type": "string", "description": "Base64 or URL" },
+        "selfie": { "type": "string", "description": "Base64 or URL" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "rejectionReason": { "type": "string" },
+        "submittedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "Offer": {
+      "title": "Offer",
+      "description": "Internet offer details",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "operator": { "type": "string", "enum": ["GP", "Robi", "Airtel", "Banglalink", "Teletalk", "Skitto", "Brilliant", "Alaap"] },
+        "title": { "type": "string" },
+        "dataAmount": { "type": "string" },
+        "price": { "type": "number" },
+        "validity": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "isActive": { "type": "boolean" },
+        "isHot": { "type": "boolean" },
+        "isPopular": { "type": "boolean" },
+        "orderCount": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["operator", "title", "dataAmount", "price", "validity", "isActive"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "Push notification history",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "body": { "type": "string" },
+        "sentAt": { "type": "string", "format": "date-time" },
+        "type": { "type": "string" }
+      },
+      "required": ["title", "body", "sentAt"]
+    },
+    "SupportMessage": {
+      "title": "SupportMessage",
+      "description": "Customer support interaction",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "senderName": { "type": "string" },
+        "senderRole": { "type": "string" },
+        "text": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "senderName", "senderRole", "text", "createdAt"]
+    },
+    "Module": {
+      "title": "Module",
+      "description": "Dynamic custom app module managed by admin",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "subtitle": { "type": "string" },
+        "icon": { "type": "string" },
+        "link": { "type": "string" },
+        "openMode": { "type": "string", "enum": ["iframe", "tab"] },
+        "isActive": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "icon", "link", "isActive"]
+    },
+    "ResellerMember": {
+      "title": "ResellerMember",
+      "description": "Reseller and agent networks",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "level": { "type": "string", "enum": ["super_admin", "master_reseller", "reseller", "retailer"] },
+        "balance": { "type": "number" },
+        "commissionRate": { "type": "number" },
+        "parentPhone": { "type": "string" },
+        "parentName": { "type": "string" },
+        "kycStatus": { "type": "string", "enum": ["none", "pending", "approved", "rejected"] },
+        "createdAt": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "suspended"] }
+      },
+      "required": ["name", "phone", "level", "balance", "commissionRate", "kycStatus", "createdAt", "status"]
+    },
+    "BalanceTransfer": {
+      "title": "BalanceTransfer",
+      "description": "Transfer records of agent wallets",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "senderPhone": { "type": "string" },
+        "senderName": { "type": "string" },
+        "senderLevel": { "type": "string" },
+        "receiverPhone": { "type": "string" },
+        "receiverName": { "type": "string" },
+        "receiverLevel": { "type": "string" },
+        "amount": { "type": "number" },
+        "commissionEarned": { "type": "number" },
+        "timestamp": { "type": "object" },
+        "pinUsed": { "type": "string" }
+      },
+      "required": ["senderPhone", "receiverPhone", "amount"]
+    },
+    "ServiceSale": {
+      "title": "ServiceSale",
+      "description": "Telecom services sale transaction",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "operator": { "type": "string", "enum": ["GP", "Robi", "Airtel", "Banglalink", "Teletalk"] },
+        "phone": { "type": "string" },
+        "packName": { "type": "string" },
+        "packType": { "type": "string", "enum": ["internet", "minute", "recharge", "bundle"] },
+        "price": { "type": "number" },
+        "commission": { "type": "number" },
+        "retailerPhone": { "type": "string" },
+        "retailerName": { "type": "string" },
+        "timestamp": { "type": "object" },
+        "status": { "type": "string", "enum": ["pending", "success", "failed"] },
+        "apiResponse": { "type": "string" }
+      },
+      "required": ["operator", "phone", "price", "status"]
+    }
+  },
+  "firestore": {
+    "/modules/{moduleId}": {
+      "schema": "Module",
+      "description": "Dynamic software modules registered by admin"
+    },
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Member profile information"
+    },
+    "/offers/{offerId}": {
+      "schema": "Offer",
+      "description": "Available internet offers"
+    },
+    "/notifications/{notificationId}": {
+      "schema": "Notification",
+      "description": "History of sent notifications"
+    },
+    "/orders/{orderId}": {
+      "schema": {
+        "title": "Order",
+        "type": "object",
+        "properties": {
+          "userId": { "type": "string" },
+          "userEmail": { "type": "string" },
+          "offerId": { "type": "string" },
+          "offerTitle": { "type": "string" },
+          "offerPrice": { "type": "number" },
+          "targetPhone": { "type": "string" },
+          "operator": { "type": "string" },
+          "status": { "type": "string", "enum": ["pending", "processing", "completed", "cancelled"] },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "description": "Offer purchase requests"
+    },
+    "/settings/{settingId}": {
+      "schema": {
+        "title": "Settings",
+        "type": "object",
+        "properties": {
+          "whatsapp": { "type": "string" },
+          "bkash": { "type": "string" },
+          "nagad": { "type": "string" },
+          "rocket": { "type": "string" },
+          "minDeposit": { "type": "number" }
+        }
+      },
+      "description": "Global system parameters"
+    },
+    "/transactions/{transactionId}": {
+      "schema": {
+        "title": "Transaction",
+        "type": "object",
+        "properties": {
+          "userId": { "type": "string" },
+          "type": { "type": "string", "enum": ["deposit", "withdraw", "income", "bonus"] },
+          "amount": { "type": "number" },
+          "status": { "type": "string", "enum": ["pending", "completed", "rejected"] },
+          "method": { "type": "string" },
+          "transactionId": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "description": "Financial protocol logs"
+    },
+    "/reviews/{reviewId}": {
+      "schema": {
+        "title": "Review",
+        "type": "object",
+        "properties": {
+          "userId": { "type": "string" },
+          "userName": { "type": "string" },
+          "rating": { "type": "number" },
+          "comment": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "description": "Customer testimonials"
+    },
+    "/settings/custom_pack": {
+      "schema": {
+        "title": "CustomPackConfig",
+        "type": "object",
+        "properties": {
+          "operators": { "type": "object" },
+          "validityMultipliers": { "type": "object" },
+          "minimumPrice": { "type": "number" }
+        }
+      },
+      "description": "Pricing for custom built packs"
+    },
+    "/support_messages/{messageId}": {
+      "schema": "SupportMessage",
+      "description": "In-app support chat messages"
+    },
+    "/kyc/{submissionId}": {
+      "schema": "KYCSubmission",
+      "description": "KYC verification documents"
+    },
+    "/reseller_members/{memberId}": {
+      "schema": "ResellerMember",
+      "description": "Reseller members list and balances"
+    },
+    "/reseller_transfers/{transferId}": {
+      "schema": "BalanceTransfer",
+      "description": "Reseller wallet balance transfer log"
+    },
+    "/reseller_sales/{saleId}": {
+      "schema": "ServiceSale",
+      "description": "Reseller telecom offer sales and commissions"
+    }
+  }
+}

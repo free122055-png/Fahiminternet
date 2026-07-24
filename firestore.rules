@@ -1,0 +1,194 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: userId (UID)
+    // Fields:
+    //   - uid: string (required)
+    //   - phone: string (required)
+    //   - displayName: string (required)
+    //   - role: string (required, 'admin' or 'user')
+    //   - createdAt: string (date-time format)
+    //   - fcmToken: string
+    //
+    // Collection: offers
+    // Document ID: offerId
+    // Fields:
+    //   - operator: string ('GP', 'Robi', 'Airtel', 'Banglalink', 'Teletalk', 'Skitto')
+    //   - title: string
+    //   - dataAmount: string
+    //   - price: number
+    //   - validity: string
+    //   - isActive: bool
+    //   - isHot: bool
+    //   - imageUrl: string
+    //   - tags: list
+    //   - createdAt: string
+    //
+    // Collection: notifications
+    // Document ID: notificationId
+    // Fields:
+    //   - title: string
+    //   - body: string
+    //   - sentAt: string
+    //   - type: string
+    // 
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isEmailAdmin() {
+      return isAuthenticated() && (request.auth.token.email == "fahimbillha70@gmail.com" || request.auth.token.email == "free122055@gmail.com");
+    }
+
+    function isAdmin() {
+      return isEmailAdmin() || (
+        isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+      );
+    }
+
+    function isValidUser(data) {
+      return data.uid == request.auth.uid &&
+             data.phone is string && data.phone.size() >= 5 &&
+             data.displayName is string && data.displayName.size() > 0 &&
+             data.role in ['admin', 'user'];
+    }
+
+    function isValidOffer(data) {
+      return data.keys().hasAll(['operator', 'title', 'dataAmount', 'price', 'validity', 'isActive']) &&
+             data.operator in ['GP', 'Robi', 'Airtel', 'Banglalink', 'Teletalk', 'Skitto', 'Brilliant', 'Alaap'] &&
+             data.price is number && data.price >= 0;
+    }
+
+    function isValidKYC(data) {
+      return data.userId == request.auth.uid &&
+             data.status == 'pending';
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read, get, list: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+                   userId == request.auth.uid && 
+                   isValidUser(request.resource.data) && 
+                   (request.resource.data.role == 'user' || 
+                    ((request.auth.token.email == "fahimbillha70@gmail.com" || request.auth.token.email == "free122055@gmail.com") && request.resource.data.role == 'admin'));
+      allow update: if isAuthenticated() && (
+        isAdmin() || 
+        (userId == request.auth.uid && 
+         // User cannot update sensitive fields
+         !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'balance', 'dataBalance', 'minuteBalance', 'smsBalance', 'isVerified']) &&
+         (
+           !request.resource.data.diff(resource.data).affectedKeys().hasAny(['kycStatus']) || 
+           request.resource.data.kycStatus == 'pending' ||
+           isAdmin()
+         )
+         )
+      );
+    }
+
+    match /support_messages/{messageId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow list: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && (request.resource.data.userId == request.auth.uid || isAdmin());
+      allow update, delete: if isAdmin();
+    }
+
+    match /orders/{orderId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow list: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && 
+                    request.resource.data.userId == request.auth.uid &&
+                    request.resource.data.status == 'pending';
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
+
+    match /transactions/{txId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow list: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
+
+    match /banners/{bannerId} {
+      allow read, get, list: if true;
+      allow write: if isAdmin();
+    }
+
+    match /offers/{offerId} {
+      allow read, get, list: if true;
+      allow write: if isAdmin();
+    }
+
+    match /notifications/{notificationId} {
+      allow read, get, list: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /settings/{settingId} {
+      allow get: if (settingId in ['general', 'custom_pack', 'app_update']) || (isAuthenticated() && (settingId != 'onesignal' || isAdmin()));
+      allow list: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /reviews/{reviewId} {
+      allow read, get, list: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    match /kyc/{kycId} {
+      allow get: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow list: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && 
+                    request.resource.data.userId == request.auth.uid && 
+                    isValidKYC(request.resource.data);
+      allow update, delete: if isAdmin();
+    }
+
+    match /books/{bookId} {
+      allow read, get, list: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /modules/{moduleId} {
+      allow read, get, list: if true;
+      allow write: if isAdmin();
+    }
+
+    match /reseller_members/{memberId} {
+      allow read, get, list, create, update: if isAuthenticated();
+      allow delete: if isAdmin();
+    }
+
+    match /reseller_transfers/{transferId} {
+      allow read, get, list, create: if isAuthenticated();
+      allow update, delete: if false;
+    }
+
+    match /reseller_sales/{saleId} {
+      allow read, get, list, create, update: if isAuthenticated();
+      allow delete: if isAdmin();
+    }
+  }
+}
