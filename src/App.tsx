@@ -207,40 +207,23 @@ const DEFAULT_SETTINGS: SiteSettings = {
   supportPhone: '01618599077',
   supportEmail: 'support@fahiminternet.com',
   supportAddress: 'ফাহিম টেলিকম সেন্টার, মিরপুর ১০, ঢাকা, বাংলাদেশ।',
+  supportWebsite: 'https://fahiminternet.com',
+  privacyPolicyUrl: 'https://fahiminternet.com/privacy-policy',
+  termsConditionsUrl: 'https://fahiminternet.com/terms-conditions',
+  appVersion: 'v1.0.0',
+  developerName: 'Rajibul Islam',
+  developerEmail: 'rajibul@example.com',
+  disclaimerText: 'This app is not affiliated with any telecom operator. We act as a third-party digital offer distribution platform. All services are subject to operator availability and terms.',
   bkashNumber: '01618599077',
   nagadNumber: '01624228476',
   rocketNumber: '01624228476',
   upayNumber: '01618599077',
   cellfinNumber: '01624228476',
   marqueeText: 'ফাহিম ইন্টারনেট-এ স্বাগতম! আমাদের নতুন সুপারফাস্ট কাস্টম অফার ও ডাবল ক্যাশব্যাক ভাউচারগুলো চেক করুন। ১ মিনিটেই ১০০% রিচার্জ গ্যারান্টি!',
-  bannerImages: [
-    'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&q=80&w=1200&h=400',
-    'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&q=80&w=1200&h=400',
-    'https://images.unsplash.com/photo-1516259762381-22954d7d3ad2?auto=format&fit=crop&q=80&w=1200&h=400'
-  ],
-  promoBanners: [
-    {
-      id: 'promo-1',
-      imageUrl: 'https://images.unsplash.com/photo-1563986768494-4dee2763ff3f?auto=format&fit=crop&w=600&h=800',
-      targetPackId: 'test-pack',
-      isActive: true,
-      category: 'internet'
-    },
-    {
-      id: 'promo-2',
-      imageUrl: 'https://images.unsplash.com/photo-1573164713988-8665fc963095?auto=format&fit=crop&w=600&h=800',
-      targetPackId: 'test-pack',
-      isActive: true,
-      category: 'internet'
-    },
-    {
-      id: 'promo-3',
-      imageUrl: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=600&h=800',
-      targetPackId: 'test-pack',
-      isActive: true,
-      category: 'internet'
-    }
-  ],
+  bannerImages: [],
+  promoBanners: [],
+  topBannerImage: '',
+  offerBanners: [],
   apkUrl: 'https://github.com/free122055/fahim-internet-apk/releases/download/v1.0/fahim-internet.apk',
   adminNumber: '01618599077',
   adminPassword: '122055',

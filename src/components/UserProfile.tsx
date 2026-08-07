@@ -8,12 +8,13 @@ import {
 
 interface UserProfileProps {
   currentUser?: any;
+  settings?: any;
   onLogout: () => void;
   onAction: (action: string) => void;
   onOpenAuth?: (msg?: string) => void;
 }
 
-export default function UserProfile({ currentUser, onLogout, onAction, onOpenAuth }: UserProfileProps) {
+export default function UserProfile({ currentUser, settings, onLogout, onAction, onOpenAuth }: UserProfileProps) {
   const [copied, setCopied] = React.useState(false);
 
   const isLoggedIn = Boolean(currentUser && (currentUser.uid || currentUser.phone));
@@ -144,30 +145,86 @@ export default function UserProfile({ currentUser, onLogout, onAction, onOpenAut
       {/* Sections */}
       <div className="px-6 space-y-6">
         
-        {/* 2. Wallet */}
-        <Section title="২. Wallet" icon={<CreditCard className="w-4 h-4 text-emerald-600" />}>
-          <GridItem icon={<Wallet />} label="Add Balance" onClick={() => isLoggedIn ? onAction('add_money') : triggerAuth()} />
-          <GridItem icon={<FileText />} label="Payment History" onClick={() => isLoggedIn ? onAction('payment_history') : triggerAuth()} />
+        {/* 1. Wallet & Finance */}
+        <Section title="১. Wallet & Finance">
+          <ListItem 
+            icon={<Wallet className="text-emerald-600" />} 
+            title="Add Balance" 
+            subtitle="এড মানি করে ব্যালেন্স যোগ করুন"
+            onClick={() => isLoggedIn ? onAction('add_money') : triggerAuth()} 
+          />
+          <ListItem 
+            icon={<FileText className="text-blue-600" />} 
+            title="Payment History" 
+            subtitle="আপনার সকল লেনদেনের হিস্টোরি"
+            onClick={() => isLoggedIn ? onAction('payment_history') : triggerAuth()} 
+          />
         </Section>
         
-        {/* 3. Account */}
-        <Section title="৩. Account" icon={<User className="w-4 h-4 text-emerald-600" />}>
-          <GridItem icon={<Settings />} label="Edit Profile" onClick={() => isLoggedIn ? onAction('account_settings') : triggerAuth()} />
-          <GridItem icon={<Lock />} label="Change Password" onClick={() => isLoggedIn ? onAction('change_password') : triggerAuth()} />
-          <GridItem icon={<Bell />} label="Notification" onClick={() => isLoggedIn ? onAction('notification_settings') : triggerAuth()} />
+        {/* 2. Account Security */}
+        <Section title="২. Account Security">
+          <ListItem 
+            icon={<Settings className="text-slate-600" />} 
+            title="Edit Profile" 
+            subtitle="নাম ও প্রোফাইল ছবি পরিবর্তন করুন"
+            onClick={() => isLoggedIn ? onAction('account_settings') : triggerAuth()} 
+          />
+          <ListItem 
+            icon={<Lock className="text-amber-600" />} 
+            title="Change Password" 
+            subtitle="নিরাপত্তার জন্য পাসওয়ার্ড পরিবর্তন করুন"
+            onClick={() => isLoggedIn ? onAction('change_password') : triggerAuth()} 
+          />
+          <ListItem 
+            icon={<Bell className="text-rose-600" />} 
+            title="Notification" 
+            subtitle="অফার ও আপডেট নোটিফিকেশন"
+            onClick={() => isLoggedIn ? onAction('notification_settings') : triggerAuth()} 
+          />
         </Section>
 
-        {/* 4. Support */}
-        <Section title="৪. Support" icon={<Headset className="w-4 h-4 text-emerald-600" />}>
-          <GridItem icon={<MessageCircle />} label="Contact Us" onClick={() => onAction('contact_us')} />
-          <GridItem icon={<HelpCircle />} label="Help / FAQ" onClick={() => onAction('faq')} />
+        {/* 3. Support Center */}
+        <Section title="৩. Support Center">
+          <ListItem 
+            icon={<MessageCircle className="text-emerald-600" />} 
+            title="Contact Us" 
+            subtitle="সরাসরি আমাদের সাথে যোগাযোগ করুন"
+            onClick={() => onAction('contact_us')} 
+          />
+          <ListItem 
+            icon={<HelpCircle className="text-blue-600" />} 
+            title="Help / FAQ" 
+            subtitle="সচরাচর জিজ্ঞাসিত প্রশ্নের উত্তর"
+            onClick={() => onAction('faq')} 
+          />
+          <ListItem 
+            icon={<AlertTriangle className="text-rose-600" />} 
+            title="Report a Problem" 
+            subtitle="অ্যাপে কোনো সমস্যা হলে আমাদের জানান"
+            onClick={() => onAction('report_problem')} 
+          />
         </Section>
 
-        {/* 5. Legal */}
-        <Section title="৫. Legal (Play Store)" icon={<ShieldCheck className="w-4 h-4 text-emerald-600" />}>
-          <GridItem icon={<ShieldCheck />} label="Privacy Policy" onClick={() => onAction('privacy_policy')} />
-          <GridItem icon={<FileText />} label="Terms & Conditions" onClick={() => onAction('terms_conditions')} />
-          <GridItem icon={<Info />} label="About App" onClick={() => onAction('about_us')} />
+        {/* 4. Legal & About */}
+        <Section title="৪. Legal (Google Play Store)">
+          <ListItem 
+            icon={<ShieldCheck className="text-emerald-600" />} 
+            title="Privacy Policy" 
+            subtitle="আপনার তথ্য সুরক্ষা এবং গোপনীয়তা"
+            onClick={() => onAction('privacy_policy')} 
+          />
+          <ListItem 
+            icon={<FileText className="text-blue-600" />} 
+            title="Terms & Conditions" 
+            subtitle="আমাদের ব্যবহারের শর্তাবলী ও নিয়মাবলী"
+            onClick={() => onAction('terms_conditions')} 
+          />
+          <ListItem 
+            icon={<Info className="text-indigo-600" />} 
+            title="About App" 
+            subtitle="অ্যাপ ভার্সন ও ডেভেলপার ইনফরমেশন"
+            onClick={() => onAction('about_us')} 
+          />
         </Section>
 
         {/* Bottom Actions */}
@@ -176,35 +233,58 @@ export default function UserProfile({ currentUser, onLogout, onAction, onOpenAut
             <>
               <button 
                 onClick={onLogout}
-                className="w-full flex items-center justify-between p-4 bg-white rounded-2xl border border-slate-200 font-bold text-slate-800 hover:bg-slate-50 transition-colors text-sm cursor-pointer"
+                className="w-full flex items-center justify-between p-4 bg-white rounded-2xl border border-slate-200 font-bold text-slate-800 hover:bg-slate-50 transition-colors text-sm cursor-pointer shadow-sm"
               >
                 <div className="flex items-center gap-3">
-                  <LogOut className="w-5 h-5 text-slate-600" />
-                  <span>Logout</span>
+                  <div className="p-2 bg-slate-50 rounded-xl">
+                    <LogOut className="w-5 h-5 text-slate-600" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm font-black text-slate-900">Logout</p>
+                    <p className="text-[10px] text-slate-400 font-bold">অ্যাকাউন্ট থেকে লগআউট করুন</p>
+                  </div>
                 </div>
                 <ChevronRight className="w-5 h-5 text-slate-400" />
               </button>
 
               <button 
                 onClick={() => onAction('delete_account')} 
-                className="w-full flex items-center justify-between p-4 bg-white rounded-2xl border border-red-100 text-red-600 font-bold hover:bg-red-50 transition-colors text-sm cursor-pointer"
+                className="w-full flex items-center justify-between p-4 bg-white rounded-2xl border border-red-100 text-red-600 font-bold hover:bg-red-50 transition-colors text-sm cursor-pointer shadow-sm"
               >
                 <div className="flex items-center gap-3">
-                  <Trash2 className="w-5 h-5 text-red-500" />
-                  <span>Delete Account</span>
+                  <div className="p-2 bg-red-50 rounded-xl">
+                    <Trash2 className="w-5 h-5 text-red-500" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm font-black text-red-600">Delete Account</p>
+                    <p className="text-[10px] text-red-300 font-bold">অ্যাকাউন্ট স্থায়ীভাবে মুছে ফেলুন</p>
+                  </div>
                 </div>
-                <ChevronRight className="w-5 h-5 text-red-300" />
+                <ChevronRight className="w-5 h-5 text-red-200" />
               </button>
             </>
           ) : (
             <button
               onClick={triggerAuth}
-              className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-md transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
+              className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-lg transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
             >
-              <User className="w-4 h-4" />
+              <User className="w-5 h-5" />
               <span>লগইন / একাউন্ট রেজিস্ট্রেশন</span>
             </button>
           )}
+        </div>
+
+        {/* Footer Info */}
+        <div className="pt-4 pb-8 text-center space-y-1">
+          <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">
+            {settings?.brandName || 'FAHIM INTERNET'} {settings?.appVersion || 'v1.0.0'}
+          </p>
+          <p className="text-[10px] font-bold text-slate-400">
+            Developer Email: <span className="text-slate-500 font-black">{settings?.developerEmail || 'support@fahiminternet.com'}</span>
+          </p>
+          <p className="text-[9px] text-slate-300 font-medium px-4 leading-relaxed">
+            আমরা কোনো ব্যক্তিগত সংবেদনশীল তথ্য সংগ্রহ করি না। সকল তথ্য Google Play পলিসি অনুযায়ী এনক্রিপ্টেড এবং সুরক্ষিত।
+          </p>
         </div>
 
       </div>
@@ -212,30 +292,35 @@ export default function UserProfile({ currentUser, onLogout, onAction, onOpenAut
   );
 }
 
-function Section({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div>
-      <h3 className="text-slate-900 font-black mb-3 flex items-center gap-2">
-        {icon}
+    <div className="space-y-3">
+      <h3 className="text-slate-400 font-black text-[10px] uppercase tracking-widest px-1">
         {title}
       </h3>
-      <div className="grid grid-cols-4 gap-3 bg-white p-4 rounded-2xl border border-slate-100">
+      <div className="bg-white rounded-[24px] border border-slate-100 divide-y divide-slate-50 overflow-hidden shadow-sm">
         {children}
       </div>
     </div>
   );
 }
 
-function GridItem({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick?: () => void }) {
+function ListItem({ icon, title, subtitle, onClick }: { icon: React.ReactNode; title: string; subtitle: string; onClick?: () => void }) {
   return (
     <button 
       onClick={onClick}
-      className="flex flex-col items-center gap-2 text-center w-full"
+      className="w-full flex items-center justify-between p-4 hover:bg-slate-50 transition-colors group cursor-pointer text-left"
     >
-      <div className="p-3 bg-slate-50 rounded-xl text-slate-600 hover:bg-slate-100 transition-colors">
-        {React.cloneElement(icon as React.ReactElement<any>, { className: 'w-5 h-5' })}
+      <div className="flex items-center gap-4">
+        <div className="p-2.5 bg-slate-50 rounded-xl group-hover:bg-white transition-colors shadow-sm">
+          {React.cloneElement(icon as React.ReactElement<any>, { className: 'w-5 h-5' })}
+        </div>
+        <div>
+          <p className="text-sm font-black text-slate-900 leading-none">{title}</p>
+          <p className="text-[10px] font-bold text-slate-500 mt-1.5">{subtitle}</p>
+        </div>
       </div>
-      <span className="text-[10px] font-bold text-slate-700 leading-tight">{label}</span>
+      <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-slate-500 group-hover:translate-x-1 transition-all" />
     </button>
   );
 }

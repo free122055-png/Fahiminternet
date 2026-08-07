@@ -132,9 +132,7 @@ export default function SoftwareDashboard({
 
   const bannerList = (settings?.bannerImages && settings.bannerImages.length > 0) 
     ? settings.bannerImages 
-    : [
-        'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&q=80&w=1200&h=400'
-      ];
+    : [];
 
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
 
@@ -173,7 +171,7 @@ export default function SoftwareDashboard({
         bgGradient: 'from-[#032e15] via-[#064e24] to-[#011a0c]',
         btnBg: 'bg-[#00e281] hover:bg-[#00c972] text-slate-950',
         logo: <GPLogo className="w-6 h-6 text-[#00f28e]" />,
-        personImg: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=600&h=600'
+        personImg: ''
       },
       {
         id: 'airtel-special',
@@ -188,7 +186,7 @@ export default function SoftwareDashboard({
         bgGradient: 'from-[#4a0000] via-[#800000] to-[#2d0000]',
         btnBg: 'bg-red-600 hover:bg-red-500 text-white',
         logo: <AirtelLogo className="w-6 h-6 text-red-500" />,
-        personImg: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=600&h=600'
+        personImg: ''
       },
       {
         id: 'robi-special',
@@ -203,7 +201,7 @@ export default function SoftwareDashboard({
         bgGradient: 'from-[#3b0213] via-[#630623] to-[#24010b]',
         btnBg: 'bg-rose-600 hover:bg-rose-500 text-white',
         logo: <RobiLogo className="w-6 h-6 text-rose-500" />,
-        personImg: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=600&h=600'
+        personImg: ''
       },
       {
         id: 'bl-special',
@@ -218,7 +216,7 @@ export default function SoftwareDashboard({
         bgGradient: 'from-[#3a1a00] via-[#662e00] to-[#210f00]',
         btnBg: 'bg-amber-500 hover:bg-amber-400 text-slate-950',
         logo: <BanglalinkLogo className="w-6 h-6 text-amber-500" />,
-        personImg: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&q=80&w=600&h=600'
+        personImg: ''
       },
       {
         id: 'teletalk-special',
@@ -233,7 +231,7 @@ export default function SoftwareDashboard({
         bgGradient: 'from-[#00282a] via-[#004d50] to-[#001718]',
         btnBg: 'bg-teal-500 hover:bg-teal-400 text-slate-950',
         logo: <TeletalkLogo className="w-6 h-6 text-teal-400" />,
-        personImg: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=600&h=600'
+        personImg: ''
       }
     ];
 
@@ -361,24 +359,6 @@ export default function SoftwareDashboard({
       keywords: ['cashback', 'ক্যাশব্যাক', 'বোনাস'] 
     },
     { 
-      id: 'add_money',
-      label: 'Add Money', 
-      icon: Wallet, 
-      bgCircle: 'bg-emerald-50 text-emerald-600 border border-emerald-100', 
-      barColor: 'bg-emerald-500', 
-      action: () => setActiveMenuModal('add_money'), 
-      keywords: ['add money', 'wallet', 'এড মানি', 'ব্যালেন্স'] 
-    },
-    { 
-      id: 'all_service',
-      label: 'সকল সার্ভিস', 
-      icon: LayoutGrid, 
-      bgCircle: 'bg-indigo-50 text-indigo-600 border border-indigo-100', 
-      barColor: 'bg-indigo-500', 
-      cat: 'All', 
-      keywords: ['all', 'সকল', 'সার্ভিস', 'অফার'] 
-    },
-    { 
       id: 'bundle',
       label: 'বান্ডিল প্যাক', 
       icon: Box, 
@@ -455,12 +435,22 @@ export default function SoftwareDashboard({
               {/* Top Header */}
               <header className="bg-white px-5 py-3 flex items-center justify-between border-b border-slate-100/60">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shadow-xs">
-                    <span className="text-2xl font-black italic">F</span>
+                  <div className="w-11 h-11 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center shadow-sm overflow-hidden p-1">
+                    {settings?.logoUrl ? (
+                      <img src={settings.logoUrl} alt="Logo" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
+                    ) : (
+                      <div className="w-full h-full bg-emerald-600 rounded-lg flex items-center justify-center text-white font-black italic text-xl">
+                        {(settings?.brandName || 'F')[0].toUpperCase()}
+                      </div>
+                    )}
                   </div>
-                  <div>
-                    <h1 className="text-base font-black text-slate-900 leading-none tracking-tight">Fahim</h1>
-                    <p className="text-xs font-bold text-emerald-500 leading-none mt-0.5">Internet</p>
+                  <div className="flex flex-col">
+                    <h1 className="text-[17px] font-black text-slate-900 leading-none tracking-tight">
+                      {settings?.brandName?.split(' ')[0] || 'Fahim'}
+                    </h1>
+                    <p className="text-[10px] font-extrabold text-emerald-600 uppercase tracking-[0.1em] mt-0.5 opacity-80">
+                      {settings?.brandName?.split(' ').slice(1).join(' ') || 'Internet'}
+                    </p>
                   </div>
                 </div>
 
@@ -504,15 +494,19 @@ export default function SoftwareDashboard({
               {/* 1. HERO BANNER WITH OVERLAPPING FLOATING SEARCH BAR (SINGLE STATIC IMAGE) */}
               <div className="px-5 pt-2 relative">
                 <div className="h-32 sm:h-40 w-full rounded-3xl overflow-hidden relative border border-slate-200/80 shadow-md bg-slate-900">
-                  <img
-                    src={settings?.topBannerImage || (settings?.bannerImages && settings.bannerImages.length > 0 ? settings.bannerImages[0] : 'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&q=80&w=1200&h=400')}
-                    alt="Main Banner"
-                    referrerPolicy="no-referrer"
-                    className="w-full h-full object-cover select-none"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&q=80&w=1200&h=400';
-                    }}
-                  />
+                  {settings?.topBannerImage ? (
+                    <img
+                      src={settings.topBannerImage}
+                      alt="Main Banner"
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full object-cover select-none"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-slate-800 animate-pulse flex flex-col items-center justify-center">
+                      <Sparkles className="w-8 h-8 text-slate-700 mb-2" />
+                      <div className="h-2 w-32 bg-slate-700 rounded-full" />
+                    </div>
+                  )}
                 </div>
 
                 {/* FLOATING OVERLAY SEARCH BAR (BKASH DASHBOARD STYLE OVERLAPPING BANNER EDGE) */}
@@ -952,12 +946,22 @@ export default function SoftwareDashboard({
             {/* Top Header for non-home tabs */}
             <header className="bg-white shrink-0 z-30 px-5 py-3 flex items-center justify-between border-b border-slate-100">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shadow-xs">
-                  <span className="text-2xl font-black italic">F</span>
+                <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center shadow-sm overflow-hidden p-1">
+                  {settings?.logoUrl ? (
+                    <img src={settings.logoUrl} alt="Logo" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
+                  ) : (
+                    <div className="w-full h-full bg-emerald-600 rounded-lg flex items-center justify-center text-white font-black italic text-lg">
+                      {(settings?.brandName || 'F')[0].toUpperCase()}
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <h1 className="text-base font-black text-slate-900 leading-none tracking-tight">Fahim</h1>
-                  <p className="text-xs font-bold text-emerald-500 leading-none mt-0.5">Internet</p>
+                <div className="flex flex-col">
+                  <h1 className="text-[16px] font-black text-slate-900 leading-none tracking-tight">
+                    {settings?.brandName?.split(' ')[0] || 'Fahim'}
+                  </h1>
+                  <p className="text-[9px] font-extrabold text-emerald-600 uppercase tracking-[0.1em] mt-0.5 opacity-80">
+                    {settings?.brandName?.split(' ').slice(1).join(' ') || 'Internet'}
+                  </p>
                 </div>
               </div>
 
@@ -1386,6 +1390,7 @@ export default function SoftwareDashboard({
         {activeNavTab === 'profile' && (
           <UserProfile 
             currentUser={currentUser}
+            settings={settings}
             onLogout={onLogout} 
             onOpenAuth={onOpenAuth}
             onAction={(action) => {

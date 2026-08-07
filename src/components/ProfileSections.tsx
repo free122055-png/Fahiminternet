@@ -3,7 +3,8 @@ import {
   Package, Clock, MapPin, Heart, CreditCard, Loader2, Copy, Check, 
   Send, PhoneCall, Globe, ShieldCheck, ChevronDown, ChevronUp, Bell, 
   Lock, User, Trash2, Headphones, MessageSquare, Info, ShieldAlert, Sparkles,
-  ArrowLeft, CheckCircle2, Wallet, ChevronLeft, Share2, X, Camera, Upload, ArrowRight, RefreshCw
+  ArrowLeft, CheckCircle2, Wallet, ChevronLeft, Share2, X, Camera, Upload, ArrowRight, RefreshCw,
+  Mail, ExternalLink, Bug, FileText, HelpCircle
 } from 'lucide-react';
 import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase';
 import { collection, query, where, getDocs, orderBy, addDoc, updateDoc, doc, setDoc, onSnapshot } from 'firebase/firestore';
@@ -1381,54 +1382,228 @@ export function NotificationSettings({ userId }: SectionProps) {
 }
 
 // 11. LEGAL & ABOUT
-export function AboutUs({ userId }: SectionProps) {
+export function AboutUs({ userId, settings }: SectionProps) {
+  const appName = settings?.brandName || 'FAHIM INTERNET';
+  const version = settings?.appVersion || 'v1.0.0';
+  const devName = settings?.developerName || 'Rajibul Islam';
+  const devEmail = settings?.developerEmail || 'support@fahiminternet.com';
+
   return (
-    <div className="space-y-2 text-[11px] text-center">
-      <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white font-black text-2xl flex items-center justify-center mx-auto shadow-md shadow-emerald-600/20">
-        FI
+    <div className="space-y-4 text-center animate-in fade-in duration-300">
+      <div className="w-20 h-20 rounded-[32px] bg-slate-50 border border-slate-100 flex items-center justify-center mx-auto shadow-xl shadow-emerald-600/5 overflow-hidden p-2">
+        {settings?.logoUrl ? (
+          <img src={settings.logoUrl} alt="App Logo" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
+        ) : (
+          <div className="w-full h-full bg-emerald-600 rounded-[22px] flex items-center justify-center text-white font-black text-3xl italic">
+            {(settings?.brandName || 'F')[0].toUpperCase()}
+          </div>
+        )}
       </div>
-      <h4 className="font-black text-sm text-slate-900 uppercase">FAHIM INTERNET</h4>
-      <p className="text-slate-500 font-bold">ভার্সন v2.4 (Ultra Fast Mobile Edition)</p>
-      <p className="text-slate-600 leading-relaxed bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-        বাংলাদেশের সেরা মোবাইল ইন্টারনেট ও মিনিট প্যাক অফার ডিজিটাল সফটওয়্যার প্ল্যাটফর্ম। জিপি, রবি, বাংলালিংক, এয়ারটেল ও টেলিটকের সেরা ক্যাশব্যাক অফার কিনুন মুহূর্তেই।
+      <div>
+        <h4 className="font-black text-xl text-slate-900 tracking-tight leading-none">{appName}</h4>
+        <div className="flex items-center justify-center gap-2 mt-2">
+          <p className="text-[10px] text-emerald-600 font-black bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+            Official App
+          </p>
+          <p className="text-[10px] text-slate-400 font-bold bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100">
+            Version {version}
+          </p>
+        </div>
+      </div>
+      
+      <div className="space-y-3 pt-2">
+        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-left">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Developer Information</p>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-700">
+              <User className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-sm font-black text-slate-900">{devName}</p>
+              <p className="text-[11px] font-bold text-slate-500">{devEmail}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-left">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Description</p>
+          <p className="text-xs text-slate-600 leading-relaxed font-medium">
+            বাংলাদেশের সেরা মোবাইল ইন্টারনেট ও মিনিট প্যাক অফার ডিজিটাল সফটওয়্যার প্ল্যাটফর্ম। জিপি, রবি, বাংলালিংক, এয়ারটেল ও টেলিটকের সেরা ক্যাশব্যাক অফার কিনুন মুহূর্তেই।
+          </p>
+        </div>
+
+        <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100 text-left">
+          <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1 flex items-center gap-1">
+            <ShieldAlert className="w-3 h-3" />
+            Disclaimer
+          </p>
+          <p className="text-[11px] text-amber-800 leading-relaxed font-bold">
+            {settings?.disclaimerText || "This app is not affiliated with any telecom operator. We act as a third-party digital offer distribution platform. All services are subject to operator availability and terms."}
+          </p>
+        </div>
+      </div>
+      
+      <p className="text-[10px] text-slate-400 font-bold pt-4">
+        &copy; {new Date().getFullYear()} {appName}. All Rights Reserved.
       </p>
     </div>
   );
 }
 
-export function PrivacyPolicy({ userId }: SectionProps) {
+export function PrivacyPolicy({ userId, settings }: SectionProps) {
+  const [showFull, setShowFull] = useState(false);
+  const privacyUrl = settings?.privacyPolicyUrl || 'https://fahiminternet.com/privacy-policy';
+  
   return (
-    <div className="space-y-2 text-[11px] leading-relaxed max-h-72 overflow-y-auto pr-1">
-      <div className="p-2.5 bg-emerald-50 rounded-xl border border-emerald-100">
-        <p className="font-extrabold text-emerald-900 mb-1">🛡️ তথ্য সুরক্ষা নিশ্চয়তা (Google Play Compliant)</p>
-        <p className="text-emerald-800">
-          আপনার ব্যক্তিগত মোবাইল নম্বর, ওয়ালেট ব্যালেন্স এবং রিচার্জ হিস্টোরি ১০০% এনক্রিপ্টেড এবং সম্পূর্ণ নিরাপদ রাখা হয়।
+    <div className="space-y-4 animate-in fade-in duration-300">
+      <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
+        <p className="font-black text-emerald-900 text-sm mb-1 flex items-center gap-2">
+          <ShieldCheck className="w-5 h-5" />
+          তথ্য সুরক্ষা ও গোপনীয়তা নীতি
+        </p>
+        <p className="text-[11px] text-emerald-800 font-bold leading-relaxed">
+          আমরা আপনার গোপনীয়তাকে সর্বোচ্চ গুরুত্ব দেই। এই অ্যাপটি ব্যবহার করার মাধ্যমে আপনি আমাদের ডাটা পলিসি গ্রহণ করছেন।
         </p>
       </div>
-      <ul className="list-disc pl-4 space-y-1 text-slate-600">
-        <li>আমরা ব্যবহারকারীর তথ্যের সর্বোচ্চ গোপনীয়তা রক্ষা করি।</li>
-        <li>কোনো অবস্থাতেই তৃতীয় পক্ষের কাছে তথ্য শেয়ার করা হয় না।</li>
-        <li>পেমেন্ট ট্রানজেকশন সম্পূর্ণ এনক্রিপ্টেড চ্যানেলে সম্পন্ন হয়।</li>
-        <li>ব্যবহারকারী ইচ্ছা করলে যেকোনো সময় তার অ্যাকাউন্ট মুছে ফেলতে (Delete Account) পারেন।</li>
-      </ul>
+
+      <div className={`space-y-4 text-[12px] font-medium text-slate-600 leading-relaxed ${!showFull ? 'max-h-40 overflow-hidden relative' : ''}`}>
+        <section>
+          <h5 className="font-black text-slate-900 mb-1">১. তথ্য সংগ্রহ:</h5>
+          <p>আমরা শুধুমাত্র আপনার মোবাইল নম্বর, নাম এবং ট্রানজেকশন আইডি সংগ্রহ করি যা রিচার্জ অর্ডার সম্পন্ন করার জন্য আবশ্যক। আমরা কোনো কন্টাক্ট লিস্ট বা ব্যক্তিগত ফাইল অ্যাক্সেস করি না।</p>
+        </section>
+
+        <section>
+          <h5 className="font-black text-slate-900 mb-1">২. তথ্যের ব্যবহার:</h5>
+          <p>সংগৃহীত তথ্য শুধুমাত্র আপনার অ্যাকাউন্ট ভেরিফিকেশন, অর্ডার প্রসেসিং এবং কাস্টমার সাপোর্টের জন্য ব্যবহৃত হয়।</p>
+        </section>
+
+        <section>
+          <h5 className="font-black text-slate-900 mb-1">৩. ডাটা সিকিউরিটি:</h5>
+          <p>আপনার সকল তথ্য এনক্রিপ্টেড ডাটাবেসে সংরক্ষিত থাকে। আমরা কোনো থার্ড-পার্টি বা তৃতীয় পক্ষের কাছে আপনার তথ্য বিক্রি বা শেয়ার করি না।</p>
+        </section>
+
+        <section>
+          <h5 className="font-black text-slate-900 mb-1">৪. গুগল প্লে-স্টোর কমপ্লায়েন্স:</h5>
+          <p>গুগল প্লে-স্টোরের ডাটা সেফটি পলিসি অনুযায়ী আমরা ব্যবহারকারীর সংবেদনশীল কোনো তথ্য (যেমন: আর্থিক পাসওয়ার্ড বা ব্যাংক ডিটেইলস) সরাসরি অ্যাপে স্টোর করি না।</p>
+        </section>
+
+        <section>
+          <h5 className="font-black text-slate-900 mb-1">৫. অ্যাকাউন্ট ডিলিট:</h5>
+          <p>ব্যবহারকারী যেকোনো সময় প্রোফাইল সেকশন থেকে তার অ্যাকাউন্ট এবং সকল ডাটা চিরতরে মুছে ফেলার আবেদন করতে পারেন।</p>
+        </section>
+
+        {!showFull && (
+          <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-white to-transparent" />
+        )}
+      </div>
+
+      <button 
+        onClick={() => setShowFull(!showFull)}
+        className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs rounded-xl transition-all"
+      >
+        {showFull ? 'সংক্ষিপ্ত করুন' : 'সম্পূর্ণ পলিসি পড়ুন'}
+      </button>
+
+      <div className="pt-2 border-t border-slate-100">
+        <a 
+          href={privacyUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-full p-4 bg-white border border-slate-200 rounded-2xl flex items-center justify-between group hover:border-emerald-500 transition-all no-underline"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-emerald-50 rounded-lg text-emerald-600">
+              <Globe className="w-5 h-5" />
+            </div>
+            <div className="text-left">
+              <p className="text-xs font-black text-slate-900 group-hover:text-emerald-700">অনলাইন কপি দেখুন</p>
+              <p className="text-[10px] text-slate-400 font-bold">অফিসিয়াল ওয়েবসাইট</p>
+            </div>
+          </div>
+          <ExternalLink className="w-4 h-4 text-slate-300 group-hover:text-emerald-500" />
+        </a>
+      </div>
     </div>
   );
 }
 
-export function TermsConditions({ userId }: SectionProps) {
+export function TermsConditions({ userId, settings }: SectionProps) {
+  const [showFull, setShowFull] = useState(false);
+  const termsUrl = settings?.termsConditionsUrl || 'https://fahiminternet.com/terms-conditions';
+
   return (
-    <div className="space-y-2 text-[11px] leading-relaxed max-h-72 overflow-y-auto pr-1">
-      <div className="p-2.5 bg-blue-50 rounded-xl border border-blue-100">
-        <p className="font-extrabold text-blue-900 mb-1">📋 ব্যবহারকারীর শর্তাবলী</p>
-        <p className="text-blue-800">
-          ফাাহিম ইন্টারনেট সফটওয়্যার ব্যবহারের পূর্বে নিয়মাবলী মনোযোগ সহকারে পড়ুন।
+    <div className="space-y-4 animate-in fade-in duration-300">
+      <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100">
+        <p className="font-black text-blue-900 text-sm mb-1 flex items-center gap-2">
+          <FileText className="w-5 h-5" />
+          ব্যবহারকারীর শর্তাবলী ও নিয়মাবলী
+        </p>
+        <p className="text-[11px] text-blue-800 font-bold leading-relaxed">
+          ফাাহিম ইন্টারনেট সার্ভিস ব্যবহারের ক্ষেত্রে নিচের শর্তগুলো প্রযোজ্য। অ্যাপ ব্যবহারের মাধ্যমে আপনি এই শর্তাবলীতে সম্মত হচ্ছেন।
         </p>
       </div>
-      <ul className="list-disc pl-4 space-y-1 text-slate-600">
-        <li>সঠিক মোবাইল নম্বর ও অপারেটর নির্বাচন করে রিচার্জ অর্ডার নিশ্চিত করুন।</li>
-        <li>ভুল নম্বরে রিচার্জ সফল হলে রিফান্ড প্রযোজ্য হবে না।</li>
-        <li>সার্ভার ত্রুটির কারণে রিচার্জ না হলে ব্যালেন্স অটো-রিফান্ড হয়ে যাবে।</li>
-      </ul>
+
+      <div className={`space-y-4 text-[12px] font-medium text-slate-600 leading-relaxed ${!showFull ? 'max-h-40 overflow-hidden relative' : ''}`}>
+        <section>
+          <h5 className="font-black text-slate-900 mb-1">১. সাধারণ শর্তাবলী:</h5>
+          <p>অ্যাপটি শুধুমাত্র বৈধ রিচার্জ এবং ইন্টারনেট প্যাক ক্রয়ের জন্য ব্যবহার করা যাবে। কোনো প্রকার অনৈতিক বা প্রতারণামূলক কাজে অ্যাপ ব্যবহার নিষিদ্ধ।</p>
+        </section>
+
+        <section>
+          <h5 className="font-black text-slate-900 mb-1">২. রিচার্জ ও পেমেন্ট:</h5>
+          <ul className="list-disc pl-5 space-y-1">
+            <li>সঠিক নম্বর ও অপারেটর সিলেক্ট করা গ্রাহকের দায়িত্ব। ভুল নম্বরে রিচার্জ সফল হলে তা ফেরতযোগ্য নয়।</li>
+            <li>পেমেন্ট করার সময় অবশ্যই সঠিক ট্রানজেকশন আইডি দিতে হবে।</li>
+            <li>সার্ভার সমস্যার কারণে রিচার্জ না হলে ২৪ ঘণ্টার মধ্যে ওয়ালেটে টাকা ফেরত দেওয়া হবে।</li>
+          </ul>
+        </section>
+
+        <section>
+          <h5 className="font-black text-slate-900 mb-1">৩. ড্রাইভ অফার পলিসি:</h5>
+          <p>ড্রাইভ অফারের ক্ষেত্রে অপারেটর সার্ভারের কারণে সময় বেশি লাগতে পারে। সফল না হওয়া পর্যন্ত ধৈর্য ধরুন অথবা সাপোর্ট টিমে কথা বলুন।</p>
+        </section>
+
+        <section>
+          <h5 className="font-black text-slate-900 mb-1">৪. অ্যাকাউন্ট নিরাপত্তা:</h5>
+          <p>আপনার পিন বা পাসওয়ার্ড অন্য কাউকে শেয়ার করবেন না। আপনার অ্যাকাউন্টের মাধ্যমে সংঘটিত কোনো অনাকাঙ্ক্ষিত লেনদেনের জন্য কর্তৃপক্ষ দায়ী থাকবে না।</p>
+        </section>
+
+        <section>
+          <h5 className="font-black text-slate-900 mb-1">৫. পরিবর্তন ও সংশোধন:</h5>
+          <p>কর্তৃপক্ষ যেকোনো সময় অফারের দাম, কমিশন বা অ্যাপের শর্তাবলী পরিবর্তনের পূর্ণ ক্ষমতা রাখে।</p>
+        </section>
+
+        {!showFull && (
+          <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-white to-transparent" />
+        )}
+      </div>
+
+      <button 
+        onClick={() => setShowFull(!showFull)}
+        className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs rounded-xl transition-all"
+      >
+        {showFull ? 'সংক্ষিপ্ত করুন' : 'সম্পূর্ণ শর্তাবলী পড়ুন'}
+      </button>
+
+      <div className="pt-2 border-t border-slate-100">
+        <a 
+          href={termsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-full p-4 bg-white border border-slate-200 rounded-2xl flex items-center justify-between group hover:border-blue-500 transition-all no-underline"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
+              <Globe className="w-5 h-5" />
+            </div>
+            <div className="text-left">
+              <p className="text-xs font-black text-slate-900 group-hover:text-blue-700">অনলাইন কপি দেখুন</p>
+              <p className="text-[10px] text-slate-400 font-bold">অফিসিয়াল ওয়েবসাইট</p>
+            </div>
+          </div>
+          <ExternalLink className="w-4 h-4 text-slate-300 group-hover:text-blue-500" />
+        </a>
+      </div>
     </div>
   );
 }
@@ -1436,45 +1611,299 @@ export function TermsConditions({ userId }: SectionProps) {
 export function ContactUs({ userId, settings }: SectionProps) {
   const phone = settings?.supportPhone || '01618599077';
   const email = settings?.supportEmail || 'support@fahiminternet.com';
-  const address = settings?.supportAddress || 'মিরপুর-১০ গোলচত্বর, ঢাকা, বাংলাদেশ';
+  const website = settings?.supportWebsite || 'https://fahiminternet.com';
+  const [submitting, setSubmitting] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  const handleContactSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    
+    try {
+      const formData = new FormData(e.target as HTMLFormElement);
+      const data = {
+        userId: userId || 'guest',
+        name: formData.get('name'),
+        email: formData.get('email'),
+        message: formData.get('message'),
+        type: 'contact',
+        status: 'new',
+        createdAt: new Date().toISOString()
+      };
+      
+      await addDoc(collection(db, 'support_messages'), data);
+      setSent(true);
+      setTimeout(() => setSent(false), 5000);
+      (e.target as HTMLFormElement).reset();
+    } catch (err) {
+      console.error('Contact form error:', err);
+      alert('সন্দেশ পাঠানো সম্ভব হয়নি। আবার চেষ্টা করুন।');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
-    <div className="space-y-2.5 text-[11px]">
-      <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
-        <div className="flex items-center gap-2">
-          <PhoneCall className="w-4 h-4 text-emerald-600" />
-          <div>
-            <p className="font-black text-slate-900">হটলাইন সাপোর্ট</p>
-            <p className="text-slate-600 font-bold">{phone}</p>
+    <div className="space-y-6 animate-in fade-in duration-300">
+      {/* Clickable Contact Cards */}
+      <div className="grid grid-cols-1 gap-3">
+        <a href={`mailto:${email}`} className="p-4 bg-white border border-slate-200 rounded-2xl flex items-center justify-between group hover:border-emerald-500 transition-all no-underline">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-emerald-50 rounded-lg text-emerald-600"><Mail className="w-5 h-5" /></div>
+            <div>
+              <p className="text-xs font-black text-slate-900">ইমেইল করুন</p>
+              <p className="text-[11px] text-slate-500 font-bold">{email}</p>
+            </div>
           </div>
+          <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-emerald-500 group-hover:translate-x-1 transition-all" />
+        </a>
+
+        <a href={`tel:${phone}`} className="p-4 bg-white border border-slate-200 rounded-2xl flex items-center justify-between group hover:border-emerald-500 transition-all no-underline">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-emerald-50 rounded-lg text-emerald-600"><PhoneCall className="w-5 h-5" /></div>
+            <div>
+              <p className="text-xs font-black text-slate-900">কল করুন</p>
+              <p className="text-[11px] text-slate-500 font-bold">{phone}</p>
+            </div>
+          </div>
+          <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-emerald-500 group-hover:translate-x-1 transition-all" />
+        </a>
+
+        <a href={website} target="_blank" rel="noreferrer" className="p-4 bg-white border border-slate-200 rounded-2xl flex items-center justify-between group hover:border-emerald-500 transition-all no-underline">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-emerald-50 rounded-lg text-emerald-600"><Globe className="w-5 h-5" /></div>
+            <div>
+              <p className="text-xs font-black text-slate-900">অফিসিয়াল ওয়েবসাইট</p>
+              <p className="text-[11px] text-slate-500 font-bold">{website.replace('https://', '')}</p>
+            </div>
+          </div>
+          <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-emerald-500 group-hover:translate-x-1 transition-all" />
+        </a>
+      </div>
+
+      {/* Contact Form */}
+      <div className="bg-slate-50 p-5 rounded-[28px] border border-slate-100 space-y-4">
+        <div className="flex items-center gap-2">
+          <MessageSquare className="w-5 h-5 text-emerald-600" />
+          <h4 className="text-sm font-black text-slate-900">আমাদের মেসেজ দিন</h4>
         </div>
-        <div className="flex items-center gap-2">
-          <Send className="w-4 h-4 text-blue-600" />
-          <div>
-            <p className="font-black text-slate-900">অফিসিয়াল ইমেইল</p>
-            <p className="text-slate-600 font-bold">{email}</p>
+
+        {sent ? (
+          <div className="p-4 bg-emerald-100 text-emerald-700 rounded-2xl text-center font-black text-xs animate-in zoom-in-95">
+            ✅ আপনার মেসেজ সফলভাবে পাঠানো হয়েছে! ২৪-৪৮ ঘণ্টার মধ্যে আমরা উত্তর দেব।
           </div>
+        ) : (
+          <form onSubmit={handleContactSubmit} className="space-y-3">
+            <input 
+              name="name"
+              type="text" 
+              placeholder="আপনার নাম" 
+              required
+              className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-emerald-500 transition-all"
+            />
+            <input 
+              name="email"
+              type="email" 
+              placeholder="আপনার ইমেইল" 
+              required
+              className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-emerald-500 transition-all"
+            />
+            <textarea 
+              name="message"
+              placeholder="আপনার সমস্যা বা জিজ্ঞাসা বিস্তারিত লিখুন..." 
+              required
+              rows={3}
+              className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-emerald-500 transition-all resize-none"
+            />
+            <button 
+              type="submit" 
+              disabled={submitting}
+              className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 shadow-md shadow-emerald-200"
+            >
+              {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              <span>মেসেজ পাঠান</span>
+            </button>
+            <p className="text-[10px] text-slate-400 font-bold text-center italic">
+              "আমরা সাধারণত ২৪-৪৮ ঘণ্টার মধ্যে উত্তর দিয়ে থাকি।"
+            </p>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export function ReportProblem({ userId }: SectionProps) {
+  const [submitting, setSubmitting] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  const handleReportSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    
+    try {
+      const formData = new FormData(e.target as HTMLFormElement);
+      const data = {
+        userId: userId || 'guest',
+        problemType: formData.get('type'),
+        description: formData.get('description'),
+        type: 'bug_report',
+        status: 'new',
+        createdAt: new Date().toISOString()
+      };
+      
+      await addDoc(collection(db, 'support_messages'), data);
+      setSent(true);
+      setTimeout(() => setSent(false), 5000);
+      (e.target as HTMLFormElement).reset();
+    } catch (err) {
+      console.error('Report bug error:', err);
+      alert('রিপোর্ট পাঠানো সম্ভব হয়নি। আবার চেষ্টা করুন।');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6 animate-in fade-in duration-300">
+      <div className="p-4 bg-rose-50 rounded-2xl border border-rose-100">
+        <p className="font-black text-rose-900 text-sm mb-1 flex items-center gap-2">
+          <Bug className="w-5 h-5" />
+          সমস্যা রিপোর্ট করুন
+        </p>
+        <p className="text-[11px] text-rose-800 font-bold leading-relaxed">
+          অ্যাপে কোনো সমস্যা বা বাগ পেলে আমাদের জানান। আমরা দ্রুত তা সমাধান করার চেষ্টা করব।
+        </p>
+      </div>
+
+      {sent ? (
+        <div className="p-8 bg-emerald-50 text-emerald-700 rounded-[32px] text-center border border-emerald-100 animate-in zoom-in-95">
+          <CheckCircle2 className="w-12 h-12 mx-auto mb-3" />
+          <h5 className="text-base font-black">রিপোর্ট জমা হয়েছে!</h5>
+          <p className="text-xs font-bold mt-1">আমাদের টিম দ্রুত এটি রিভিউ করবে। ধন্যবাদ।</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Globe className="w-4 h-4 text-purple-600" />
-          <div>
-            <p className="font-black text-slate-900">হেড অফিস ঠিকানা</p>
-            <p className="text-slate-600 font-bold">{address}</p>
+      ) : (
+        <form onSubmit={handleReportSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">সমস্যার ধরন</label>
+            <select 
+              name="type" 
+              required
+              className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-emerald-500"
+            >
+              <option value="login">লগইন সমস্যা</option>
+              <option value="payment">পেমেন্ট / এড মানি সমস্যা</option>
+              <option value="offer">অফার চালু হচ্ছে না</option>
+              <option value="ui">অ্যাপের ডিজাইন বা লেখা ভুল</option>
+              <option value="other">অন্যান্য</option>
+            </select>
           </div>
+
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">বিস্তারিত বর্ণনা</label>
+            <textarea 
+              name="description" 
+              required
+              rows={5}
+              placeholder="সমস্যাটি বিস্তারিত লিখুন যাতে আমরা দ্রুত বুঝতে পারি..."
+              className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-emerald-500 resize-none"
+            />
+          </div>
+
+          <button 
+            type="submit" 
+            disabled={submitting}
+            className="w-full py-4 bg-slate-900 hover:bg-black text-white font-black text-xs rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg"
+          >
+            {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-4 h-4" />}
+            <span>রিপোর্ট সাবমিট করুন</span>
+          </button>
+        </form>
+      )}
+    </div>
+  );
+}
+
+export function FAQFull({ userId }: SectionProps) {
+  const [openIdx, setOpenIdx] = useState<number | null>(null);
+
+  const faqs = [
+    {
+      q: 'কিভাবে অ্যাপটি ব্যবহার করব?',
+      a: 'অ্যাপে প্রথমে একটি অ্যাকাউন্ট তৈরি করুন। এরপর ওয়ালেট ব্যালেন্স যোগ করে আপনার পছন্দমতো অফার সিলেক্ট করে মোবাইল নম্বর দিয়ে অর্ডার করুন। ৫ মিনিটের মধ্যে আপনার অফার চালু হয়ে যাবে।'
+    },
+    {
+      q: 'কিভাবে ইন্টারনেট প্যাক কিনব?',
+      a: 'হোম স্ক্রিন থেকে "ইন্টারনেট প্যাক" বাটনে ক্লিক করুন। আপনার অপারেটর সিলেক্ট করুন, অফারটি পছন্দ করুন এবং যে নম্বরে অফার নিতে চান সেই নম্বরটি দিয়ে অর্ডার কনফার্ম করুন।'
+    },
+    {
+      q: 'পেমেন্ট করার পর ব্যালেন্স যোগ না হলে কি করব?',
+      a: 'কখনও ট্রানজেকশন আইডি ভেরিফাই করতে দেরি হতে পারে। ১০-১৫ মিনিট অপেক্ষা করুন। এরপরও যোগ না হলে হটলাইন নাম্বারে যোগাযোগ করুন বা বাগ রিপোর্টে ট্রানজেকশন আইডি দিন।'
+    },
+    {
+      q: 'অফার চালু না হলে কি রিফান্ড পাব?',
+      a: 'হ্যাঁ, যদি কোনো কারণে অফারটি চালু করতে ব্যর্থ হই, তবে আপনার ওয়ালেট ব্যালেন্স সাথে সাথে অটো-রিফান্ড হয়ে যাবে যা দিয়ে আপনি অন্য অফার কিনতে পারবেন।'
+    },
+    {
+      q: 'ওয়ালেট ব্যালেন্স কি টাকা হিসেবে তুলে নেয়া যায়?',
+      a: 'না, ওয়ালেট ব্যালেন্স শুধুমাত্র অ্যাপের অফার বা মোবাইল রিচার্জ করার জন্য ব্যবহার করা যাবে। এটি ক্যাশ-আউটযোগ্য নয়।'
+    },
+    {
+      q: 'অ্যাপটি কি নিরাপদ?',
+      a: 'হ্যাঁ, আমরা ব্যবহারকারীর তথ্যের গোপনীয়তা রক্ষা করি এবং গুগল প্লে-স্টোর পলিসি অনুযায়ী ১০০% এনক্রিপ্টেড ডাটা সুরক্ষা নিশ্চিত করি।'
+    },
+    {
+      q: 'অফার কতক্ষণ সময়ের মধ্যে চালু হয়?',
+      a: 'সাধারণত ৫-১০ মিনিটের মধ্যে অফার সফল হয়। তবে ড্রাইভ অফারের ক্ষেত্রে অপারেটর সার্ভারের উপর নির্ভর করে ৩০ মিনিট পর্যন্ত সময় লাগতে পারে।'
+    },
+    {
+      q: 'কাস্টমার সাপোর্ট কখন পাওয়া যায়?',
+      a: 'আমাদের কাস্টমার সাপোর্ট টিম প্রতিদিন সকাল ৯টা থেকে রাত ১০টা পর্যন্ত আপনাদের সেবায় নিয়োজিত থাকে।'
+    },
+    {
+      q: 'ভুল নম্বরে রিচার্জ গেলে কি করব?',
+      a: 'ভুল নম্বরে রিচার্জ সফল হয়ে গেলে আমরা সেটি ফেরত আনতে পারি না। তাই নম্বর দেয়ার সময় অবশ্যই সতর্কতা অবলম্বন করুন।'
+    },
+    {
+      q: 'ডিসকাউন্ট বা ক্যাশব্যাক কিভাবে কাজ করে?',
+      a: 'প্রতিটি অফারের পাশে ক্যাশব্যাক অ্যামাউন্ট লেখা থাকে। অফারটি সফল হওয়ার পর ওই পরিমাণ টাকা আপনার মূল ব্যালেন্সের সাথে পুনরায় যোগ হয়ে যাবে।'
+    }
+  ];
+
+  return (
+    <div className="space-y-3 animate-in fade-in duration-300">
+      <div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-100 flex items-center gap-3">
+        <HelpCircle className="w-6 h-6 text-emerald-600" />
+        <div>
+          <h4 className="text-sm font-black text-slate-900">সচরাচর জিজ্ঞাসিত প্রশ্ন (FAQ)</h4>
+          <p className="text-[10px] text-slate-500 font-bold">আপনার প্রশ্নের উত্তর এখানে পেয়ে যাবেন</p>
         </div>
       </div>
 
-      <a
-        href={`https://wa.me/${phone.replace(/[^0-9]/g, '')}`}
-        target="_blank"
-        rel="noreferrer"
-        className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl flex items-center justify-center gap-2 no-underline cursor-pointer shadow-md shadow-emerald-600/20"
-      >
-        <MessageSquare className="w-4 h-4" />
-        <span>হোয়াটসঅ্যাপ লাইভ চ্যাট</span>
-      </a>
+      <div className="space-y-2.5">
+        {faqs.map((faq, i) => (
+          <div key={i} className="border border-slate-200 rounded-2xl bg-white overflow-hidden shadow-sm">
+            <button 
+              onClick={() => setOpenIdx(openIdx === i ? null : i)}
+              className="w-full p-4 text-left font-black text-xs text-slate-800 flex justify-between items-center bg-none border-none cursor-pointer"
+            >
+              <span className="pr-4 leading-relaxed">{faq.q}</span>
+              {openIdx === i ? <ChevronUp className="w-4 h-4 text-emerald-600 shrink-0" /> : <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />}
+            </button>
+            {openIdx === i && (
+              <div className="px-4 pb-4 text-xs text-slate-600 leading-relaxed font-medium border-t border-slate-50 pt-3 animate-in slide-in-from-top-2">
+                {faq.a}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
+}
+
+export function FAQ({ userId }: SectionProps) {
+  return <FAQFull userId={userId} />;
 }
 
 export function DeleteAccount({ userId }: SectionProps) {
@@ -1514,3 +1943,4 @@ export function DeleteAccount({ userId }: SectionProps) {
     </div>
   );
 }
+

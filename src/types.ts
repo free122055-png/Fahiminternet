@@ -68,6 +68,13 @@ export interface SiteSettings {
   supportPhone: string;
   supportEmail: string;
   supportAddress: string;
+  supportWebsite?: string;
+  privacyPolicyUrl?: string;
+  termsConditionsUrl?: string;
+  appVersion?: string;
+  developerName?: string;
+  developerEmail?: string;
+  disclaimerText?: string;
   bkashNumber: string;
   nagadNumber: string;
   rocketNumber: string;
