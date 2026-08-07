@@ -3,6 +3,29 @@ import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 
+// Add global error listener to catch fatal errors early
+if (typeof window !== 'undefined') {
+  window.onerror = (message, source, lineno, colno, error) => {
+    console.error('Fatal Client Error:', { message, source, lineno, colno, error });
+    // If the screen is still blank after 3 seconds, show a fallback UI
+    setTimeout(() => {
+      const root = document.getElementById('root');
+      if (root && root.innerHTML === '') {
+        root.innerHTML = `
+          <div style="min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #fef2f2; font-family: system-ui, -apple-system, sans-serif; padding: 24px; text-align: center;">
+            <div style="background-color: #fee2e2; color: #dc2626; padding: 20px; rounded-xl; border: 1px solid #fecaca; max-width: 400px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">
+              <h2 style="margin: 0 0 8px 0; font-size: 18px; font-weight: 800;">অপ্রত্যাশিত সমস্যা!</h2>
+              <p style="margin: 0 0 16px 0; font-size: 14px; font-weight: 500; color: #991b1b;">অ্যাপটি লোড করতে সমস্যা হচ্ছে। দয়া করে পেজটি রিফ্রেশ করুন অথবা আপনার ইন্টারনেট কানেকশন চেক করুন।</p>
+              <button onclick="window.location.reload()" style="background-color: #dc2626; color: white; border: none; padding: 10px 24px; border-radius: 12px; font-weight: 700; cursor: pointer; transition: opacity 0.2s;">Refresh Page</button>
+            </div>
+            <p style="margin-top: 16px; font-size: 10px; color: #ef4444; font-family: monospace;">Error: ${message}</p>
+          </div>
+        `;
+      }
+    }, 3000);
+  };
+}
+
 if (window.location.hostname === 'fahiminternet.com' || window.location.hostname === 'fahiminternetbd.com') {
   // Safe redirect fallback: show a high-quality loading spinner while navigating to the main www domain
   if (typeof document !== 'undefined' && document.body) {
@@ -22,9 +45,12 @@ if (window.location.hostname === 'fahiminternet.com' || window.location.hostname
     window.location.replace(targetUrl);
   }
 } else {
-  createRoot(document.getElementById('root')!).render(
-    <StrictMode>
-      <App />
-    </StrictMode>,
-  );
+  const rootElement = document.getElementById('root');
+  if (rootElement) {
+    createRoot(rootElement).render(
+      <StrictMode>
+        <App />
+      </StrictMode>,
+    );
+  }
 }
