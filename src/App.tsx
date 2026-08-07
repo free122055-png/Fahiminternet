@@ -245,19 +245,6 @@ const DEFAULT_SETTINGS: SiteSettings = {
 export default function App() {
   const [renderError, setRenderError] = useState(false);
 
-  useEffect(() => {
-    const handleError = (error: ErrorEvent | PromiseRejectionEvent) => {
-      console.error('Captured Global Error:', error);
-      setRenderError(true);
-    };
-    window.addEventListener('error', handleError);
-    window.addEventListener('unhandledrejection', handleError);
-    return () => {
-      window.removeEventListener('error', handleError);
-      window.removeEventListener('unhandledrejection', handleError);
-    };
-  }, []);
-
   const [activeTab, setActiveTab] = useState<'homepage' | 'store' | 'builder' | 'tracking' | 'admin'>(() => {
     try {
       const params = new URLSearchParams(window.location.search);
