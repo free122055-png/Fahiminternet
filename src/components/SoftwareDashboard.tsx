@@ -18,7 +18,7 @@ import {
   AddMoney, PaymentHistory, Cashback, SavedCards, 
   SupportTeam, LiveChat, Tickets, Faq, 
   AccountSettings, ChangePassword, SecuritySettings, NotificationSettings,
-  AboutUs, PrivacyPolicy, TermsConditions, ContactUs, DeleteAccount 
+  AboutUs, PrivacyPolicy, TermsConditions, ContactUs, DeleteAccount, ReportProblem, FAQFull
 } from './ProfileSections';
 
 function formatBnNumber(num: number | string): string {
@@ -107,7 +107,7 @@ export default function SoftwareDashboard({
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [showNotificationModal, setShowNotificationModal] = useState(false);
   const [showMenuDrawer, setShowMenuDrawer] = useState(false);
-  const [activeMenuModal, setActiveMenuModal] = useState<'privacy' | 'terms' | 'contact' | 'about' | 'support' | 'delete_account' | 'my_packs' | 'order_history' | 'order_tracking' | 'favorite_offers' | 'add_money' | 'payment_history' | 'cashback' | 'saved_cards' | 'support_team' | 'live_chat' | 'tickets' | 'faq' | 'account_settings' | 'change_password' | 'security' | 'notification_settings' | null>(null);
+  const [activeMenuModal, setActiveMenuModal] = useState<'privacy' | 'terms' | 'contact' | 'about' | 'support' | 'delete_account' | 'report_problem' | 'my_packs' | 'order_history' | 'order_tracking' | 'favorite_offers' | 'add_money' | 'payment_history' | 'cashback' | 'saved_cards' | 'support_team' | 'live_chat' | 'tickets' | 'faq' | 'account_settings' | 'change_password' | 'security' | 'notification_settings' | null>(null);
   const [showSearchInput, setShowSearchInput] = useState(false);
   const [sortBy, setSortBy] = useState<'default' | 'lowest' | 'highest'>('lowest');
   const [favIds, setFavIds] = useState<string[]>([]);
@@ -433,24 +433,23 @@ export default function SoftwareDashboard({
             {/* 📌 PERMANENTLY FIXED TOP SECTION (HEADER + HERO BANNER + OVERLAPPING SEARCH BAR) */}
             <div className="shrink-0 bg-white z-30 pb-7 shadow-xs border-b border-slate-100/50">
               {/* Top Header */}
-              <header className="bg-white px-5 py-3 flex items-center justify-between border-b border-slate-100/60">
-                <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center shadow-sm overflow-hidden p-1">
+              <header className="bg-white px-5 py-4 flex items-center justify-between border-b border-slate-100/60 sticky top-0 z-40 backdrop-blur-md bg-white/95">
+                <div className="flex items-center gap-3.5 group cursor-pointer" onClick={() => setActiveNavTab('profile')}>
+                  <div className="w-12 h-12 rounded-[16px] bg-white border border-slate-100 flex items-center justify-center shadow-md overflow-hidden p-1 transition-transform group-hover:scale-105 active:scale-95">
                     {settings?.logoUrl ? (
                       <img src={settings.logoUrl} alt="Logo" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
                     ) : (
-                      <div className="w-full h-full bg-emerald-600 rounded-lg flex items-center justify-center text-white font-black italic text-xl">
+                      <div className="w-full h-full bg-gradient-to-br from-emerald-600 to-emerald-800 rounded-xl flex items-center justify-center text-white font-black italic text-2xl shadow-inner">
                         {(settings?.brandName || 'F')[0].toUpperCase()}
                       </div>
                     )}
                   </div>
                   <div className="flex flex-col">
-                    <h1 className="text-[17px] font-black text-slate-900 leading-none tracking-tight">
-                      {settings?.brandName?.split(' ')[0] || 'Fahim'}
+                    <h1 className="text-[19px] font-black text-slate-900 leading-none tracking-tight flex items-center gap-1.5">
+                      {settings?.brandName || 'FAHIM INTERNET'}
+                      <Sparkles className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
                     </h1>
-                    <p className="text-[10px] font-extrabold text-emerald-600 uppercase tracking-[0.1em] mt-0.5 opacity-80">
-                      {settings?.brandName?.split(' ').slice(1).join(' ') || 'Internet'}
-                    </p>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.1em] mt-1">Premium Digital Services</p>
                   </div>
                 </div>
 
@@ -1727,84 +1726,99 @@ export default function SoftwareDashboard({
       </AnimatePresence>
 
 
-      {/* ------------------ DYNAMIC MENU MODALS (PRIVACY, TERMS, CONTACT, ABOUT, SUPPORT, DELETE ACCOUNT) ------------------ */}
+      {/* ------------------ DYNAMIC MENU MODALS / FULL-SCREEN SCREENS ------------------ */}
       <AnimatePresence>
         {activeMenuModal && (
-          <div className={`absolute inset-0 z-50 overflow-y-auto ${activeMenuModal === 'add_money' ? 'bg-white' : 'bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4'}`}>
+          <div className="absolute inset-0 z-50 bg-white overflow-y-auto">
             <motion.div
-              initial={activeMenuModal === 'add_money' ? { y: '100%' } : { scale: 0.9, opacity: 0 }}
-              animate={activeMenuModal === 'add_money' ? { y: 0 } : { scale: 1, opacity: 1 }}
-              exit={activeMenuModal === 'add_money' ? { y: '100%' } : { scale: 0.9, opacity: 0 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className={activeMenuModal === 'add_money' 
-                ? "bg-white min-h-full w-full p-6 space-y-6 pb-20"
-                : "bg-white max-w-xs w-full rounded-2xl p-4 border border-slate-200 shadow-2xl space-y-3 my-auto max-h-[90%] overflow-y-auto"
-              }
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 220 }}
+              className="min-h-full w-full bg-white flex flex-col"
             >
-              {/* Modal Header */}
-              <div className={`flex items-center justify-between ${activeMenuModal === 'add_money' ? 'pb-4 border-b-2 border-slate-50' : 'border-b border-slate-100 pb-2.5'}`}>
-                <h3 className={`${activeMenuModal === 'add_money' ? 'text-lg' : 'text-xs'} font-black text-slate-900 flex items-center gap-1.5`}>
-                  {activeMenuModal === 'privacy' && <span>🔒 Privacy Policy</span>}
-                  {activeMenuModal === 'terms' && <span>📜 Terms & Conditions</span>}
-                  {activeMenuModal === 'contact' && <span>📞 Contact Us</span>}
-                  {activeMenuModal === 'about' && <span>ℹ️ About App</span>}
-                  {activeMenuModal === 'support' && <span>❓ Help & Support</span>}
-                  {activeMenuModal === 'add_money' && (
-                    <div className="flex flex-col">
-                      <span className="text-lg font-black tracking-tight">অ্যাড মানি</span>
-                      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Wallet Recharge</span>
-                    </div>
-                  )}
-                  {activeMenuModal === 'payment_history' && <span>📄 Payment History</span>}
-                  {activeMenuModal === 'account_settings' && <span>👤 Account Settings</span>}
-                  {activeMenuModal === 'change_password' && <span>🔒 Change Password</span>}
-                  {activeMenuModal === 'notification_settings' && <span>🔔 Notifications</span>}
-                  {activeMenuModal === 'faq' && <span>❓ Help / FAQ</span>}
-                  {activeMenuModal === 'delete_account' && <span className="text-rose-600">🗑️ Delete Account</span>}
-                  {!['privacy', 'terms', 'contact', 'about', 'support', 'add_money', 'payment_history', 'account_settings', 'change_password', 'notification_settings', 'faq', 'delete_account'].includes(activeMenuModal) && <span>সেটিং বিস্তারিত</span>}
-                </h3>
-                <button
-                  onClick={() => setActiveMenuModal(null)}
-                  className={`${activeMenuModal === 'add_money' ? 'w-10 h-10 text-base' : 'w-6 h-6 text-xs'} rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center font-bold border-none cursor-pointer transition-all active:scale-90`}
-                >
-                  ✕
-                </button>
+              {/* Screen Top Header (Premium Style) */}
+              <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-100 flex items-center justify-between px-5 py-4">
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setActiveMenuModal(null)}
+                    className="w-10 h-10 rounded-2xl bg-slate-50 hover:bg-slate-100 text-slate-900 flex items-center justify-center transition-all border-none cursor-pointer active:scale-90 shadow-sm"
+                  >
+                    <ArrowLeft className="w-5 h-5" />
+                  </button>
+                  <div>
+                    <h3 className="text-base font-black text-slate-900 leading-tight">
+                      {activeMenuModal === 'privacy' && 'Privacy Policy'}
+                      {activeMenuModal === 'terms' && 'Terms & Conditions'}
+                      {activeMenuModal === 'contact' && 'Contact Us'}
+                      {activeMenuModal === 'about' && 'About App'}
+                      {activeMenuModal === 'support' && 'Help & Support'}
+                      {activeMenuModal === 'faq' && 'Help / FAQ'}
+                      {activeMenuModal === 'add_money' && 'অ্যাড মানি'}
+                      {activeMenuModal === 'payment_history' && 'Payment History'}
+                      {activeMenuModal === 'account_settings' && 'Account Settings'}
+                      {activeMenuModal === 'change_password' && 'Change Password'}
+                      {activeMenuModal === 'notification_settings' && 'Notifications'}
+                      {activeMenuModal === 'delete_account' && 'Delete Account'}
+                      {activeMenuModal === 'support_team' && 'Support Team'}
+                      {activeMenuModal === 'report_problem' && 'Report a Problem'}
+                    </h3>
+                    <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest mt-0.5">
+                      {(settings?.brandName || 'FAHIM INTERNET').split(' ')[0]} Official App
+                    </p>
+                  </div>
+                </div>
+
+                <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
+                  {['privacy', 'terms'].includes(activeMenuModal) && <ShieldCheck className="w-5 h-5" />}
+                  {['contact', 'support_team'].includes(activeMenuModal) && <Headphones className="w-5 h-5" />}
+                  {['faq', 'support'].includes(activeMenuModal) && <HelpCircle className="w-5 h-5" />}
+                  {['add_money', 'payment_history'].includes(activeMenuModal) && <Wallet className="w-5 h-5" />}
+                  {['account_settings', 'change_password'].includes(activeMenuModal) && <User className="w-5 h-5" />}
+                  {['delete_account', 'report_problem'].includes(activeMenuModal) && <Trash2 className="w-5 h-5" />}
+                  {['about'].includes(activeMenuModal) && <Info className="w-5 h-5" />}
+                </div>
               </div>
 
-              {/* Modal Body Content */}
-              <div className={`${activeMenuModal === 'add_money' ? 'text-sm' : 'text-xs'} space-y-2.5 text-slate-700 font-medium`}>
-                {activeMenuModal === 'my_packs' && <MyPacks userId={currentUser?.uid} />}
-                {activeMenuModal === 'order_history' && <OrderHistory userId={currentUser?.uid} />}
-                {activeMenuModal === 'order_tracking' && <OrderTracking userId={currentUser?.uid} />}
-                {activeMenuModal === 'favorite_offers' && <FavoriteOffers userId={currentUser?.uid} />}
-                {activeMenuModal === 'add_money' && <AddMoney userId={currentUser?.uid} settings={settings} currentUser={currentUser} />}
-                {activeMenuModal === 'payment_history' && <PaymentHistory userId={currentUser?.uid} />}
-                {activeMenuModal === 'cashback' && <Cashback userId={currentUser?.uid} />}
-                {activeMenuModal === 'saved_cards' && <SavedCards userId={currentUser?.uid} />}
-                {activeMenuModal === 'support_team' && <SupportTeam userId={currentUser?.uid} />}
-                {activeMenuModal === 'live_chat' && <LiveChat userId={currentUser?.uid} />}
-                {activeMenuModal === 'tickets' && <Tickets userId={currentUser?.uid} />}
-                {activeMenuModal === 'faq' && <Faq userId={currentUser?.uid} />}
-                {activeMenuModal === 'support' && <Faq userId={currentUser?.uid} />}
-                {activeMenuModal === 'account_settings' && <AccountSettings userId={currentUser?.uid} currentUser={currentUser} />}
-                {activeMenuModal === 'change_password' && <ChangePassword userId={currentUser?.uid} />}
-                {activeMenuModal === 'security' && <SecuritySettings userId={currentUser?.uid} />}
-                {activeMenuModal === 'notification_settings' && <NotificationSettings userId={currentUser?.uid} />}
-                {activeMenuModal === 'about' && <AboutUs userId={currentUser?.uid} />}
-                {activeMenuModal === 'privacy' && <PrivacyPolicy userId={currentUser?.uid} />}
-                {activeMenuModal === 'terms' && <TermsConditions userId={currentUser?.uid} />}
-                {activeMenuModal === 'contact' && <ContactUs userId={currentUser?.uid} settings={settings} />}
-                {activeMenuModal === 'delete_account' && <DeleteAccount userId={currentUser?.uid} currentUser={currentUser} />}
+              {/* Screen Body Content (Spacious & Clean) */}
+              <div className="flex-1 p-6 pb-24 overflow-y-auto bg-slate-50/30">
+                <div className="max-w-2xl mx-auto">
+                  {activeMenuModal === 'my_packs' && <MyPacks userId={currentUser?.uid} />}
+                  {activeMenuModal === 'order_history' && <OrderHistory userId={currentUser?.uid} />}
+                  {activeMenuModal === 'order_tracking' && <OrderTracking userId={currentUser?.uid} />}
+                  {activeMenuModal === 'favorite_offers' && <FavoriteOffers userId={currentUser?.uid} />}
+                  {activeMenuModal === 'add_money' && <AddMoney userId={currentUser?.uid} settings={settings} currentUser={currentUser} />}
+                  {activeMenuModal === 'payment_history' && <PaymentHistory userId={currentUser?.uid} />}
+                  {activeMenuModal === 'cashback' && <Cashback userId={currentUser?.uid} />}
+                  {activeMenuModal === 'saved_cards' && <SavedCards userId={currentUser?.uid} />}
+                  {activeMenuModal === 'support_team' && <SupportTeam userId={currentUser?.uid} />}
+                  {activeMenuModal === 'live_chat' && <LiveChat userId={currentUser?.uid} />}
+                  {activeMenuModal === 'tickets' && <Tickets userId={currentUser?.uid} />}
+                  {activeMenuModal === 'faq' && <Faq userId={currentUser?.uid} />}
+                  {activeMenuModal === 'support' && <Faq userId={currentUser?.uid} />}
+                  {activeMenuModal === 'account_settings' && <AccountSettings userId={currentUser?.uid} currentUser={currentUser} />}
+                  {activeMenuModal === 'change_password' && <ChangePassword userId={currentUser?.uid} />}
+                  {activeMenuModal === 'security' && <SecuritySettings userId={currentUser?.uid} />}
+                  {activeMenuModal === 'notification_settings' && <NotificationSettings userId={currentUser?.uid} />}
+                  {activeMenuModal === 'about' && <AboutUs userId={currentUser?.uid} />}
+                  {activeMenuModal === 'privacy' && <PrivacyPolicy userId={currentUser?.uid} />}
+                  {activeMenuModal === 'terms' && <TermsConditions userId={currentUser?.uid} />}
+                  {activeMenuModal === 'contact' && <ContactUs userId={currentUser?.uid} settings={settings} />}
+                  {activeMenuModal === 'report_problem' && <ReportProblem userId={currentUser?.uid} settings={settings} />}
+                  {activeMenuModal === 'delete_account' && <DeleteAccount userId={currentUser?.uid} currentUser={currentUser} />}
+                </div>
               </div>
 
-              {/* Close Button */}
-              {activeMenuModal !== 'delete_account' && (
-                <button
-                  onClick={() => setActiveMenuModal(null)}
-                  className={`w-full py-4 ${activeMenuModal === 'add_money' ? 'bg-slate-100 text-slate-500 hover:bg-slate-200' : 'bg-slate-900 hover:bg-slate-800 text-white'} font-extrabold text-xs rounded-xl cursor-pointer border-none mt-4 transition-all`}
-                >
-                  বন্ধ করুন
-                </button>
+              {/* Bottom Sticky Action (Optional) */}
+              {['contact', 'faq', 'support'].includes(activeMenuModal) && (
+                <div className="fixed bottom-0 left-0 right-0 p-5 bg-white border-t border-slate-100 z-40">
+                  <button
+                    onClick={() => setActiveMenuModal(null)}
+                    className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm rounded-2xl shadow-lg shadow-emerald-100 transition-all active:scale-[0.98] border-none cursor-pointer"
+                  >
+                    ফিরে যান
+                  </button>
+                </div>
               )}
             </motion.div>
           </div>

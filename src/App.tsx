@@ -23,7 +23,7 @@ import confetti from 'canvas-confetti';
 import { 
   Wifi, Phone, Layers, ShieldCheck, HelpCircle, Landmark, Search, 
   ChevronRight, Sparkles, Star, Flame, BookmarkCheck, Users, Clock,
-  Check, Play, RotateCcw, AlertCircle, MapPin, Shield, ThumbsUp, Send, Smartphone, X, Maximize, Minimize, Zap,
+  Check, Play, RotateCcw, AlertCircle, RefreshCw, MapPin, Shield, ThumbsUp, Send, Smartphone, X, Maximize, Minimize, Zap,
   ShoppingCart, Percent, Bot, ChevronDown, MessageCircle, CheckCircle, ArrowRight
 } from 'lucide-react';
 
@@ -210,9 +210,9 @@ const DEFAULT_SETTINGS: SiteSettings = {
   supportWebsite: 'https://fahiminternet.com',
   privacyPolicyUrl: 'https://fahiminternet.com/privacy-policy',
   termsConditionsUrl: 'https://fahiminternet.com/terms-conditions',
-  appVersion: 'v1.0.0',
+  appVersion: 'v2.5.0 Premium',
   developerName: 'Rajibul Islam',
-  developerEmail: 'rajibul@example.com',
+  developerEmail: 'support@fahiminternet.com',
   disclaimerText: 'This app is not affiliated with any telecom operator. We act as a third-party digital offer distribution platform. All services are subject to operator availability and terms.',
   bkashNumber: '01618599077',
   nagadNumber: '01624228476',
@@ -222,7 +222,7 @@ const DEFAULT_SETTINGS: SiteSettings = {
   marqueeText: 'ফাহিম ইন্টারনেট-এ স্বাগতম! আমাদের নতুন সুপারফাস্ট কাস্টম অফার ও ডাবল ক্যাশব্যাক ভাউচারগুলো চেক করুন। ১ মিনিটেই ১০০% রিচার্জ গ্যারান্টি!',
   bannerImages: [],
   promoBanners: [],
-  topBannerImage: '',
+  topBannerImage: 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=2070&auto=format&fit=crop',
   offerBanners: [],
   apkUrl: 'https://github.com/free122055/fahim-internet-apk/releases/download/v1.0/fahim-internet.apk',
   adminNumber: '01618599077',
@@ -243,6 +243,21 @@ const DEFAULT_SETTINGS: SiteSettings = {
 };
 
 export default function App() {
+  const [renderError, setRenderError] = useState(false);
+
+  useEffect(() => {
+    const handleError = (error: ErrorEvent | PromiseRejectionEvent) => {
+      console.error('Captured Global Error:', error);
+      setRenderError(true);
+    };
+    window.addEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleError);
+    return () => {
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleError);
+    };
+  }, []);
+
   const [activeTab, setActiveTab] = useState<'homepage' | 'store' | 'builder' | 'tracking' | 'admin'>(() => {
     try {
       const params = new URLSearchParams(window.location.search);
@@ -1514,7 +1529,30 @@ export default function App() {
 
   return (
     <div className="font-sans selection:bg-blue-100 selection:text-blue-900 h-[100dvh] overflow-hidden bg-slate-100">
-      <main className="h-full w-full overflow-hidden p-0">
+      {/* ERROR BOUNDARY WRAPPER */}
+      {renderError ? (
+        <div className="fixed inset-0 z-[9999] bg-white flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-700">
+          <div className="w-20 h-20 bg-rose-50 rounded-full flex items-center justify-center text-rose-500 mb-6 border-2 border-rose-100 shadow-sm">
+            <AlertCircle className="w-10 h-10" />
+          </div>
+          <h1 className="text-xl font-black text-slate-900 mb-2">যান্ত্রিক ত্রুটি দেখা দিয়েছে!</h1>
+          <p className="text-sm text-slate-500 max-w-xs mb-8 leading-relaxed font-bold">
+            অ্যাপটি লোড করতে একটি সমস্যা হয়েছে। সাময়িক এই সমস্যার জন্য আমরা দুঃখিত। দয়া করে পেজটি রিফ্রেশ করুন।
+          </p>
+          <button 
+            onClick={() => {
+              setRenderError(false);
+              window.location.reload();
+            }}
+            className="px-10 py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm rounded-2xl shadow-xl shadow-emerald-100 active:scale-95 transition-all flex items-center gap-2"
+          >
+            <RefreshCw className="w-4 h-4" />
+            <span>আবার চেষ্টা করুন</span>
+          </button>
+        </div>
+      ) : (
+        <>
+          <main className="h-full w-full overflow-hidden p-0">
         {(activeTab === 'homepage' || activeTab === 'store') && (
           <div className="h-full w-full overflow-hidden flex flex-col">
             {/* PRIMARY SOFTWARE DASHBOARD INTERFACE */}
@@ -2286,6 +2324,8 @@ export default function App() {
         isVisible={toast.isVisible}
         onClose={() => setToast(prev => ({ ...prev, isVisible: false }))}
       />
+        </>
+      )}
     </div>
   );
 }
