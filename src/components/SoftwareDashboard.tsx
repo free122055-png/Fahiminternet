@@ -7,7 +7,7 @@ import {
   LogOut, Shield, Sparkles, AlertCircle, ArrowRight, RefreshCw, Layers, CheckCircle, Eye,
   ArrowLeft, Filter, SlidersHorizontal, Heart, ShieldCheck, Menu, X, MessageSquare, HelpCircle, Send,
   Lock, FileText, PhoneCall, Info, Trash2, ShieldAlert, Clock, XCircle, Share2, Calendar, CheckCircle2, ChevronLeft, Check,
-  LayoutGrid, Mail, Home, BadgePercent, ChevronDown
+  LayoutGrid, Mail, Home, BadgePercent, ChevronDown, BadgeCheck
 } from 'lucide-react';
 import { GPLogo, RobiLogo, BanglalinkLogo, AirtelLogo, TeletalkLogo } from './OperatorLogos';
 import PackCard from './PackCard';
@@ -445,11 +445,25 @@ export default function SoftwareDashboard({
                     )}
                   </div>
                   <div className="flex flex-col">
-                    <h1 className="text-[19px] font-black text-slate-900 leading-none tracking-tight flex items-center gap-1.5">
-                      {settings?.brandName || 'FAHIM INTERNET'}
-                      <Sparkles className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-                    </h1>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.1em] mt-1">Premium Digital Services</p>
+                    <div className="flex items-center gap-2">
+                      <h1 className="text-[22px] font-black bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent leading-none tracking-tighter">
+                        {settings?.brandName || 'FAHIM INTERNET'}
+                      </h1>
+                      <div className="flex items-center gap-0.5">
+                        <Sparkles className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                        <BadgeCheck className="w-4.5 h-4.5 text-blue-500 fill-blue-50" />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 mt-2">
+                      <div className="flex items-center gap-1 px-2 py-0.5 bg-emerald-50 border border-emerald-100 rounded-full">
+                        <ShieldCheck className="w-2.5 h-2.5 text-emerald-600" />
+                        <span className="text-[8px] text-emerald-700 font-black uppercase tracking-wider">Verified Portal</span>
+                      </div>
+                      <div className="w-1 h-1 rounded-full bg-slate-300" />
+                      <span className="text-[9px] text-slate-400 font-bold uppercase tracking-[0.1em]">
+                        Premium Digital Service
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -1223,6 +1237,35 @@ export default function SoftwareDashboard({
                   আপনার সকল লেনদেন ১০০% নিরাপদ ও এনক্রিপ্টেড
                 </p>
               </div>
+            </div>
+
+            {/* 🔒 POLICY & PRIVACY QUICK ACCESS (Requested by User) */}
+            <div className="grid grid-cols-2 gap-3 pb-4">
+              <button 
+                onClick={() => setActiveMenuModal('privacy')}
+                className="flex items-center gap-2.5 p-3.5 bg-slate-50 border border-slate-200 rounded-2xl hover:bg-white hover:border-emerald-300 transition-all cursor-pointer group shadow-2xs"
+              >
+                <div className="w-8 h-8 rounded-xl bg-white text-emerald-600 flex items-center justify-center shadow-sm group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                  <ShieldCheck className="w-4 h-4" />
+                </div>
+                <div className="text-left">
+                  <p className="text-[11px] font-black text-slate-900 leading-tight">গোপনীয়তা নীতি</p>
+                  <p className="text-[9px] font-bold text-slate-400 mt-0.5">Privacy Policy</p>
+                </div>
+              </button>
+
+              <button 
+                onClick={() => setActiveMenuModal('terms')}
+                className="flex items-center gap-2.5 p-3.5 bg-slate-50 border border-slate-200 rounded-2xl hover:bg-white hover:border-blue-300 transition-all cursor-pointer group shadow-2xs"
+              >
+                <div className="w-8 h-8 rounded-xl bg-white text-blue-600 flex items-center justify-center shadow-sm group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                  <FileText className="w-4 h-4" />
+                </div>
+                <div className="text-left">
+                  <p className="text-[11px] font-black text-slate-900 leading-tight">শর্তাবলী দেখুন</p>
+                  <p className="text-[9px] font-bold text-slate-400 mt-0.5">Terms & Conditions</p>
+                </div>
+              </button>
             </div>
 
           </div>

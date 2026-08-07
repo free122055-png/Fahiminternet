@@ -8,21 +8,37 @@ setLogLevel('silent');
 export { firebaseConfig };
 
 // Initialize the default website Firebase app
-const defaultApp = getApps().find(a => a.name === 'default-app') || initializeApp(firebaseConfig, 'default-app');
-export const defaultDb = initializeFirestore(defaultApp, {
-  experimentalForceLongPolling: true
-}, firebaseConfig.firestoreDatabaseId);
+let defaultApp;
+try {
+  defaultApp = getApps().find(a => a.name === 'default-app') || initializeApp(firebaseConfig, 'default-app');
+} catch (e) {
+  console.error('Firebase initializeApp (default) failed:', e);
+  // Re-throw to be caught by global listener but with better context
+  throw new Error('Firebase Initialization Error: ' + (e instanceof Error ? e.message : String(e)));
+}
+
+let defaultDb;
+try {
+  defaultDb = initializeFirestore(defaultApp, {
+    experimentalForceLongPolling: true
+  }, firebaseConfig.firestoreDatabaseId);
+} catch (e) {
+  console.error('Firestore initialize (default) failed:', e);
+  throw new Error('Firestore Initialization Error: ' + (e instanceof Error ? e.message : String(e)));
+}
+
+export { defaultDb };
 
 // Check if Software Mode is enabled and configure
 let systemMode = 'website';
 let activeConfig: any = firebaseConfig;
 
 if (typeof window !== 'undefined') {
-  const cachedMode = localStorage.getItem('systemMode');
-  const cachedConfigStr = localStorage.getItem('softwareFirebaseConfig');
-  
-  if (cachedMode === 'software' && cachedConfigStr) {
-    try {
+  try {
+    const cachedMode = localStorage.getItem('systemMode');
+    const cachedConfigStr = localStorage.getItem('softwareFirebaseConfig');
+    
+    if (cachedMode === 'software' && cachedConfigStr) {
       const parsedConfig = JSON.parse(cachedConfigStr);
       if (parsedConfig && parsedConfig.apiKey && parsedConfig.projectId) {
         systemMode = 'software';
@@ -36,15 +52,22 @@ if (typeof window !== 'undefined') {
           firestoreDatabaseId: parsedConfig.databaseId || '(default)'
         };
       }
-    } catch (e) {
-      console.error('Failed to parse cached software firebase config:', e);
     }
+  } catch (e) {
+    console.error('Failed to parse cached software firebase config:', e);
   }
 }
 
 // Initialize active Firebase App
 const appName = systemMode === 'software' ? 'software-app' : '[DEFAULT]';
-const app = getApps().find(a => a.name === appName) || initializeApp(activeConfig, appName);
+let app;
+try {
+  app = getApps().find(a => a.name === appName) || initializeApp(activeConfig, appName);
+} catch (e) {
+  console.error(`Firebase initializeApp (${appName}) failed:`, e);
+  throw new Error(`Firebase App (${appName}) Initialization Error: ` + (e instanceof Error ? e.message : String(e)));
+}
+
 export const auth = getAuth(app);
 
 // Explicitly set persistence for mobile browsers/apps 
@@ -52,9 +75,17 @@ setPersistence(auth, browserLocalPersistence).catch(err => {
   console.error("Auth persistence error:", err);
 });
 
-export const db = initializeFirestore(app, {
-  experimentalForceLongPolling: true
-}, activeConfig.firestoreDatabaseId);
+let db;
+try {
+  db = initializeFirestore(app, {
+    experimentalForceLongPolling: true
+  }, activeConfig.firestoreDatabaseId);
+} catch (e) {
+  console.error(`Firestore initialize (${appName}) failed:`, e);
+  throw new Error(`Firestore (${appName}) Initialization Error: ` + (e instanceof Error ? e.message : String(e)));
+}
+
+export { db };
 
 // Enable offline persistence (disabled by default to prevent multi-tab/iframe locking issues in AI Studio preview environments)
 /*

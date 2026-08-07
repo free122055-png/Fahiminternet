@@ -64,24 +64,34 @@ export default function Header({
         <div className="flex items-center shrink-0">
           <div 
             onClick={() => { setActiveTab('homepage'); setMobileMenuOpen(false); }}
-            className="flex items-center gap-3 cursor-pointer transition-all duration-350 active:scale-[0.98] group p-1.5 sm:px-3 sm:py-2 rounded-xl hover:bg-slate-50"
+            className="flex items-center gap-3 sm:gap-4 cursor-pointer transition-all duration-350 active:scale-[0.98] group p-1 sm:px-3 sm:py-2 rounded-2xl hover:bg-slate-50/80"
             title="ফাহিম ইন্টারনেট হোম"
           >
-            {/* Simple F Logo as in screenshot */}
-            <div className="w-12 h-12 flex items-center justify-center rounded-full bg-emerald-50 text-emerald-600 shrink-0">
-              {settings.logoUrl ? (
-                <img src={settings.logoUrl} alt="FAHIM INTERNET Logo" referrerPolicy="no-referrer" className="w-full h-full object-cover rounded-full" />
-              ) : (
-                <span className="text-2xl font-black italic pr-1">F</span>
-              )}
+            {/* Premium Logo Container */}
+            <div className="relative">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-[18px] bg-white border border-emerald-100/50 shadow-sm overflow-hidden p-1 group-hover:shadow-md transition-shadow">
+                {settings.logoUrl ? (
+                  <img src={settings.logoUrl} alt="FAHIM INTERNET Logo" referrerPolicy="no-referrer" className="w-full h-full object-contain rounded-lg" />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white rounded-lg shadow-inner">
+                    <span className="text-2xl font-black italic">F</span>
+                  </div>
+                )}
+              </div>
+              <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center shadow-sm border border-emerald-50">
+                <ShieldCheck className="w-3.5 h-3.5 text-blue-500 fill-blue-50" />
+              </div>
             </div>
             
             <div className="flex flex-col text-left justify-center">
-              <span className="text-xl font-black text-slate-900 tracking-tight leading-none">
-                Fahim
-              </span>
-              <span className="text-lg font-bold text-emerald-500 tracking-tight leading-none mt-1">
-                Internet
+              <div className="flex items-center gap-1">
+                <span className="text-xl sm:text-2xl font-black bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent tracking-tighter leading-none">
+                  {settings.brandName?.split(' ')[0] || 'Fahim'}
+                </span>
+                <Sparkles className="w-3 h-3 text-amber-500 animate-pulse" />
+              </div>
+              <span className="text-base sm:text-lg font-bold text-emerald-500 tracking-tight leading-none mt-1 uppercase">
+                {settings.brandName?.split(' ').slice(1).join(' ') || 'Internet'}
               </span>
             </div>
           </div>

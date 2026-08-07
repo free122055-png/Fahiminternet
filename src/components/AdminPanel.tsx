@@ -4,7 +4,7 @@ import {
   ShieldCheck, Lock, Eye, EyeOff, LayoutDashboard, ListOrdered, Package, 
   TrendingUp, CircleDollarSign, Hourglass, CheckSquare, RefreshCw, Trash2, 
   Plus, Sparkles, Check, X, AlertTriangle, Settings, Wifi, Edit, Upload, Shield, Smartphone, FileText, Save, Phone, CreditCard,
-  GraduationCap, Briefcase, ArrowRight, ExternalLink, Copy, CheckCircle, Users, Image as ImageIcon, Bell, Search, Globe, Zap, Bot, LayoutGrid,
+  GraduationCap, Briefcase, ArrowRight, ExternalLink, Copy, CheckCircle, Users, Image as ImageIcon, Bell, Search, Globe, Zap, Bot, LayoutGrid, Building2,
   Link2, CheckCircle2, Layers, Wallet, Headset, Video, MonitorPlay, User, PhoneCall
 } from 'lucide-react';
 import { db } from '../lib/firebase';
@@ -598,6 +598,16 @@ export default function AdminPanel({
       await onUpdateSettings(updated);
       alert('🎉 পেমেন্ট মেথড লোগো সফলভাবে আপডেট করা হয়েছে!');
     }
+  };
+
+  const handleMainLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const base64 = await compressIcon(file);
+    setSettingsLogoUrl(base64);
+    const updated = { ...getCurrentSettingsState(), logoUrl: base64 };
+    await onUpdateSettings(updated);
+    alert('🎉 মেইন ব্র্যান্ড লোগো সফলভাবে আপডেট করা হয়েছে!');
   };
 
   const handleAddPromoBanner = async () => {
@@ -1622,6 +1632,7 @@ export default function AdminPanel({
                   })}
                 </div>
               )}
+            </div>
             {/* 4. Quick Service Icons */}
             <div className="bg-white p-6 rounded-[24px] border border-slate-100 shadow-sm space-y-4">
               <div className="flex items-center gap-3 mb-2">
@@ -1652,133 +1663,110 @@ export default function AdminPanel({
                       {settingsQuickServiceIcons[service.id] ? (
                         <img src={settingsQuickServiceIcons[service.id]} alt={service.label} className="w-full h-full object-contain rounded-full" />
                       ) : (
-                        <span className="text-[10px] text-slate-400 font-bold">No Icon</span>
+                        <div className="w-full h-full bg-slate-100 flex items-center justify-center">
+                          <Settings className="w-4 h-4 text-slate-300" />
+                        </div>
                       )}
                     </div>
                     <p className="text-[10px] font-black text-slate-800">{service.label}</p>
                     <label className="px-3 py-1 bg-white border border-slate-200 rounded-lg text-[10px] font-bold cursor-pointer hover:bg-slate-100 transition-colors whitespace-nowrap">
-                      আইকন আপলোড
-                      <input type="file" accept="image/*" className="hidden" onChange={(e) => handleQuickServiceIconUpload(service.id, e)} />
+                      আইকন পরিবর্তন
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        className="hidden" 
+                        onChange={(e) => handleQuickServiceIconUpload(service.id, e)}
+                      />
                     </label>
                   </div>
                 ))}
               </div>
             </div>
-            </div>
           </div>
         )}
 
+        {/* TAB: SOFTWARE REQUESTS */}
         {adminTab === 'software_requests' && (
           <div className="space-y-6 animate-fade-in">
-            {/* Card 1: Site Identity */}
-            <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden">
-              <div className="px-8 py-5 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
-                <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">ইনকামিং প্রজেক্ট রিকোয়েস্টসমূহ</h3>
-                <div className="px-3 py-1 bg-white rounded-full border border-slate-200 text-[10px] font-black text-slate-500 uppercase tracking-wider shadow-sm">
-                  Live Sync Active
-                </div>
+            <div className="bg-white p-6 rounded-[24px] border border-slate-100 shadow-sm flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-black text-slate-900">সফটওয়্যার ও প্রজেক্ট রিকোয়েস্ট ({softwareRequests.length})</h3>
+                <p className="text-sm text-slate-500 font-bold">গ্রাহকদের কাস্টম সফটওয়্যার বা ওয়েবসাইট তৈরির রিকোয়েস্টগুলো এখানে ম্যানেজ করুন।</p>
               </div>
+            </div>
 
-              {softwareRequests.length === 0 ? (
-                <div className="p-20 text-center space-y-4">
-                  <div className="w-20 h-20 rounded-full bg-slate-50 flex items-center justify-center text-slate-300 mx-auto border-2 border-dashed border-slate-200">
-                    <FileText className="w-10 h-10" />
-                  </div>
-                  <p className="text-sm font-bold text-slate-400 italic">বর্তমানে কোনো প্রজেক্ট রিকোয়েস্ট নেই।</p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left">
-                    <thead className="bg-slate-50 border-b border-slate-100 text-slate-400 text-[11px] font-black uppercase tracking-widest">
-                      <tr>
-                        <th className="px-8 py-4">গ্রাহকের নাম ও যোগাযোগ</th>
-                        <th className="px-8 py-4">প্রজেক্ট ডিটেইলস</th>
-                        <th className="px-4 py-4">বাজেট ও ডেলিভারি</th>
-                        <th className="px-4 py-4">স্টেটাস</th>
-                        <th className="px-8 py-4 text-right">অ্যাকশন</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-50">
-                      {softwareRequests.map((req, idx) => (
-                        <tr key={req.id || idx} className="hover:bg-slate-50/50 transition-colors group">
-                          <td className="px-8 py-4">
-                            <div className="flex items-center gap-4">
-                              <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-700 font-black flex items-center justify-center text-xl shadow-sm border border-blue-100">
-                                {req.name ? req.name[0].toUpperCase() : 'P'}
-                              </div>
-                              <div>
-                                <p className="font-black text-slate-900 text-base leading-none">{req.name || 'Anonymous'}</p>
-                                <p className="text-[11px] text-blue-600 font-bold uppercase tracking-wider mt-1.5 flex items-center gap-1.5">
-                                  {req.phone || 'No Phone'}
-                                </p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-8 py-4 max-w-xs">
-                            <p className="font-bold text-slate-700 text-sm line-clamp-2">{req.description || 'No description provided'}</p>
-                            <p className="text-[10px] text-slate-400 mt-1 uppercase font-black tracking-widest">Type: {req.type || 'Custom Software'}</p>
-                          </td>
-                          <td className="px-4 py-4">
-                            <div className="space-y-1">
-                              <p className="font-black text-emerald-600 text-sm">৳{req.budget || 'N/A'}</p>
-                              <p className="text-[10px] text-slate-500 font-bold uppercase">Time: {req.deliveryTime || 'TBD'}</p>
-                            </div>
-                          </td>
-                          <td className="px-4 py-4">
+            <div className="bg-white rounded-[24px] border border-slate-100 shadow-sm overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead className="bg-slate-50 border-b border-slate-100 text-slate-400 text-[11px] font-black uppercase tracking-widest">
+                    <tr>
+                      <th className="px-6 py-4">গ্রাহক ও প্রজেক্ট</th>
+                      <th className="px-6 py-4">বাজেট ও সময়সীমা</th>
+                      <th className="px-6 py-4">বিবরণ</th>
+                      <th className="px-6 py-4">স্টেটাস</th>
+                      <th className="px-6 py-4 text-right">অ্যাকশন</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50 text-xs font-bold">
+                    {softwareRequests.map((req) => (
+                      <tr key={req.id} className="hover:bg-slate-50/50 group">
+                        <td className="px-6 py-4">
+                          <p className="text-slate-900 font-black">{req.name || req.userName || 'Unknown'}</p>
+                          <p className="text-[10px] text-emerald-600 mt-0.5">{req.phone || req.email || 'N/A'}</p>
+                          <p className="text-[10px] text-slate-400 mt-0.5">{new Date(req.createdAt || Date.now()).toLocaleString('bn-BD')}</p>
+                        </td>
+                        <td className="px-6 py-4">
+                          <p className="text-slate-900 font-black text-sm">৳{req.budget || 'Negotiable'}</p>
+                          <p className="text-[10px] text-slate-500 mt-0.5">ডেডলাইন: {req.deadline || 'জরুরি নয়'}</p>
+                        </td>
+                        <td className="px-6 py-4 max-w-xs">
+                          <p className="text-slate-700 font-semibold truncate">{req.description || req.projectType || 'N/A'}</p>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                            req.status === 'completed' ? 'bg-emerald-50 text-emerald-700' : 
+                            req.status === 'in_progress' ? 'bg-indigo-50 text-indigo-700' :
+                            'bg-amber-50 text-amber-700'
+                          }`}>
+                            {req.status === 'completed' ? 'সম্পন্ন' : req.status === 'in_progress' ? 'চলমান' : 'পেন্ডিং'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
                             <select
                               value={req.status || 'pending'}
                               onChange={(e) => handleUpdateSoftwareStatus(req.id, e.target.value)}
-                              className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider border cursor-pointer focus:outline-none transition-all ${
-                                req.status === 'completed' 
-                                  ? 'bg-emerald-50 border-emerald-100 text-emerald-700' 
-                                  : req.status === 'active'
-                                  ? 'bg-blue-50 border-blue-100 text-blue-700'
-                                  : 'bg-amber-50 border-amber-100 text-amber-700'
-                              }`}
+                              className="px-2 py-1.5 bg-slate-100 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 focus:outline-none"
                             >
-                              <option value="pending">Pending</option>
-                              <option value="active">Active</option>
-                              <option value="completed">Completed</option>
+                              <option value="pending">পেন্ডিং</option>
+                              <option value="in_progress">চলমান</option>
+                              <option value="completed">সম্পন্ন</option>
                             </select>
-                          </td>
-                          <td className="px-8 py-4">
-                            <div className="flex items-center justify-end gap-2">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  alert(`
-পণ্য: ${req.description}
-গ্রাহক: ${req.name}
-ফোন: ${req.phone}
-বাজেট: ৳${req.budget}
-                                  `);
-                                }}
-                                className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
-                                title="View Details"
-                              >
-                                <Eye className="w-5 h-5" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteSoftwareRequest(req.id)}
-                                className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
-                                title="Delete Request"
-                              >
-                                <Trash2 className="w-5 h-5" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+                            <button
+                              onClick={() => handleDeleteSoftwareRequest(req.id)}
+                              className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {softwareRequests.length === 0 && (
+                      <tr>
+                        <td colSpan={5} className="px-6 py-12 text-center text-slate-400 font-bold">
+                          কোনো সফটওয়্যার/প্রজেক্ট রিকোয়েস্ট পাওয়া যায়নি।
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
 
-        {/* TAB 4: SITE & WIFI SETTINGS */}
+        {/* TAB 4: ADD MONEY REQUESTS */}
         {adminTab === 'add_money' && (
           <div className="space-y-6 animate-fade-in">
             <div className="bg-white p-6 rounded-[24px] border border-slate-100 shadow-sm flex justify-between items-center">
@@ -1887,55 +1875,128 @@ export default function AdminPanel({
 
             <div className="space-y-8">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              
-              {/* Card 1: Site Identity */}
-              <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden flex flex-col">
-                <div className="px-8 py-5 bg-slate-50 border-b border-slate-100 flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center">
-                    <Globe className="w-5 h-5" />
+                {/* Card 1: Brand & Identity */}
+                <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden flex flex-col group transition-all hover:shadow-lg">
+                  <div className="px-8 py-5 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shadow-sm">
+                        <Building2 className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">১. ব্র্যান্ড ও পরিচয় সেটিংস</h3>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Brand Identity Settings</p>
+                      </div>
+                    </div>
+                    <div className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[9px] font-black uppercase tracking-wider border border-emerald-100">
+                      Active Branding
+                    </div>
                   </div>
-                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">১. সাইট আইডেন্টিটি ও ব্র্যান্ডিং</h3>
-                </div>
-                <div className="p-8 space-y-6 flex-grow">
-                  <div className="space-y-2">
-                    <label className="text-xs font-black text-slate-500 uppercase tracking-widest">ব্যান্ডের নাম (যেমন: Fahim Internet)</label>
-                    <input
-                      type="text"
-                      value={settingsBrandName}
-                      onChange={(e) => setSettingsBrandName(e.target.value)}
-                      placeholder="আপনার ব্রান্ড বা ওয়েবসাইটের নাম"
-                      className="w-full px-4 py-3.5 rounded-2xl border border-slate-100 bg-slate-50 focus:bg-white focus:outline-none focus:border-indigo-500 font-bold text-slate-800 transition-all shadow-inner-sm"
-                    />
-                  </div>
+                  
+                  <div className="p-8 space-y-8 flex-grow">
+                    {/* Brand Name */}
+                    <div className="space-y-3">
+                      <label className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                        ব্র্যান্ডের নাম (Brand Name)
+                      </label>
+                      <div className="relative group">
+                        <input 
+                          type="text" 
+                          value={settingsBrandName} 
+                          onChange={(e) => setSettingsBrandName(e.target.value)} 
+                          className="w-full px-5 py-4 rounded-2xl border border-slate-100 bg-slate-50 focus:bg-white focus:outline-none focus:border-indigo-500 font-black text-slate-800 transition-all shadow-inner-sm"
+                          placeholder="যেমন: ফাহিম ইন্টারনেট"
+                        />
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-400 transition-colors">
+                          <Sparkles className="w-5 h-5" />
+                        </div>
+                      </div>
+                      <p className="text-[10px] text-slate-400 font-bold px-1 italic">সফটওয়্যার ও ওয়েবসাইটের সর্বত্র এই নামটি প্রদর্শিত হবে।</p>
+                    </div>
 
-                  <div className="space-y-2">
-                    <label className="text-xs font-black text-slate-500 uppercase tracking-widest">ZiniPay নিবন্ধিত ডোমেইন</label>
-                    <input
-                      type="text"
-                      value={settingsZiniRegisteredDomain}
-                      onChange={(e) => setSettingsZiniRegisteredDomain(e.target.value)}
-                      placeholder="যেমন: https://www.fahiminternet.com"
-                      className="w-full px-4 py-3.5 rounded-2xl border border-slate-100 bg-slate-50 focus:bg-white focus:outline-none focus:border-indigo-500 font-bold text-slate-800 transition-all shadow-inner-sm"
-                    />
-                  </div>
+                    {/* Logo Upload & Preview */}
+                    <div className="space-y-4">
+                      <label className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                        মেইন ব্র্যান্ড লোগো (Brand Logo)
+                      </label>
+                      
+                      <div className="flex flex-col sm:flex-row items-center gap-6 p-5 rounded-2xl bg-slate-50 border border-slate-100 transition-all hover:border-emerald-200">
+                        <div className="w-20 h-20 rounded-2xl bg-white border border-slate-200 flex items-center justify-center overflow-hidden shadow-sm p-1.5 shrink-0 group-hover:scale-105 transition-transform">
+                          {settingsLogoUrl ? (
+                            <img src={settingsLogoUrl} alt="Preview" className="w-full h-full object-contain rounded-lg" referrerPolicy="no-referrer" />
+                          ) : (
+                            <div className="w-full h-full bg-slate-50 flex items-center justify-center text-slate-300">
+                              <Building2 className="w-8 h-8 opacity-20" />
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="flex-1 space-y-3 w-full">
+                          <input 
+                            type="file" 
+                            accept="image/*" 
+                            id="main-logo-upload-card" 
+                            onChange={handleMainLogoUpload}
+                            className="hidden" 
+                          />
+                          <label 
+                            htmlFor="main-logo-upload-card"
+                            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 bg-white border border-slate-200 hover:border-emerald-500 hover:text-emerald-600 text-slate-700 rounded-xl text-[11px] font-black transition-all cursor-pointer shadow-sm active:scale-95"
+                          >
+                            <Upload className="w-4 h-4" />
+                            লোগো ফাইল আপলোড করুন
+                          </label>
+                          <div className="space-y-1">
+                            <p className="text-[10px] text-slate-400 font-bold leading-tight">PNG/JPG ফরম্যাট সমর্থন করে।</p>
+                            <p className="text-[10px] text-slate-400 font-bold leading-tight">সুপারিশ: স্বচ্ছ ব্যাকগ্রাউন্ড সহ লোগো ব্যবহার করুন।</p>
+                          </div>
+                        </div>
+                      </div>
 
-                  <div className="space-y-2">
-                    <label className="text-xs font-black text-slate-500 uppercase tracking-widest">অ্যান্ড্রয়েড APK ডাউনলোড লিংক</label>
-                    <div className="relative">
-                      <Smartphone className="w-4 h-4 absolute left-4 top-4 text-slate-400" />
-                      <input
-                        type="url"
-                        value={settingsApkUrl}
-                        onChange={(e) => setSettingsApkUrl(e.target.value)}
-                        placeholder="https://example.com/app.apk"
-                        className="w-full pl-10 pr-4 py-3.5 rounded-2xl border border-slate-100 bg-slate-50 focus:bg-white focus:border-indigo-500 transition-all font-bold text-slate-800 shadow-sm"
-                      />
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">অথবা লোগো ইমেজ URL দিন</label>
+                        <input 
+                          type="text" 
+                          value={settingsLogoUrl} 
+                          onChange={(e) => setSettingsLogoUrl(e.target.value)} 
+                          placeholder="https://example.com/logo.png"
+                          className="w-full px-4 py-3 rounded-xl border border-slate-100 bg-slate-50/50 focus:bg-white focus:outline-none focus:border-indigo-500 font-mono text-xs text-slate-600 transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Other Identity Settings */}
+                    <div className="space-y-4 pt-4 border-t border-slate-100">
+                      <div className="space-y-2">
+                        <label className="text-xs font-black text-slate-500 uppercase tracking-widest">ZiniPay নিবন্ধিত ডোমেইন</label>
+                        <input
+                          type="text"
+                          value={settingsZiniRegisteredDomain}
+                          onChange={(e) => setSettingsZiniRegisteredDomain(e.target.value)}
+                          placeholder="যেমন: https://www.fahiminternet.com"
+                          className="w-full px-4 py-3.5 rounded-2xl border border-slate-100 bg-slate-50 focus:bg-white focus:outline-none focus:border-indigo-500 font-bold text-slate-800 transition-all shadow-inner-sm"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-xs font-black text-slate-500 uppercase tracking-widest">অ্যান্ড্রয়েড APK ডাউনলোড লিংক</label>
+                        <div className="relative">
+                          <Smartphone className="w-4 h-4 absolute left-4 top-4 text-slate-400" />
+                          <input
+                            type="url"
+                            value={settingsApkUrl}
+                            onChange={(e) => setSettingsApkUrl(e.target.value)}
+                            placeholder="https://example.com/app.apk"
+                            className="w-full pl-10 pr-4 py-3.5 rounded-2xl border border-slate-100 bg-slate-50 focus:bg-white focus:border-indigo-500 transition-all font-bold text-slate-800 shadow-sm"
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Card 2: Helpline & Support */}
+                {/* Card 2: Helpline & Support */}
               <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden flex flex-col">
                 <div className="px-8 py-5 bg-slate-50 border-b border-slate-100 flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center">
@@ -2211,257 +2272,6 @@ export default function AdminPanel({
                 </div>
               </div>
 
-
-
-                {/* ⚡ Mobile Recharge Service & API Auto-Configuration Settings */}
-                <div className="p-4 bg-gradient-to-br from-emerald-50 via-teal-50/40 to-emerald-50 border border-emerald-200/90 rounded-2xl md:col-span-2 space-y-4 shadow-xs">
-                  <div className="pb-2 border-b border-emerald-200/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div>
-                      <h4 className="text-xs font-black text-emerald-950 uppercase tracking-wider flex items-center gap-1.5">
-                        <Zap className="w-4 h-4 text-emerald-600 fill-emerald-600" />
-                        <span>মোবাইল রিচার্জ সিস্টেম ও এপিআই অটোমেশন (API Auto-Recharge)</span>
-                      </h4>
-                      <p className="text-sm text-slate-600 font-bold mt-0.5">
-                        রিচার্জ অন/অফ করুন এবং পরবর্তীতে এপিআই কি (API Key) সেট করার সাথে সাথে অটো রিচার্জ চালু করুন।
-                      </p>
-                    </div>
-
-                    {/* On / Off Toggle Switch */}
-                    <button
-                      type="button"
-                      onClick={() => setSettingsRechargeEnabled(!settingsRechargeEnabled)}
-                      className={`px-3.5 py-1.5 rounded-full font-black text-xs transition-all flex items-center gap-2 cursor-pointer shadow-xs ${
-                        settingsRechargeEnabled
-                          ? 'bg-emerald-600 text-white hover:bg-emerald-700'
-                          : 'bg-rose-600 text-white hover:bg-rose-700'
-                      }`}
-                    >
-                      <span className={`w-2.5 h-2.5 rounded-full ${settingsRechargeEnabled ? 'bg-white animate-pulse' : 'bg-rose-200'}`} />
-                      <span>{settingsRechargeEnabled ? 'সার্ভিস চালু (ON)' : 'সার্ভিস বন্ধ (OFF)'}</span>
-                    </button>
-                  </div>
-
-                  {/* Settings Fields */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-semibold">
-                    
-                    {/* Notice when disabled */}
-                    <div className="space-y-1.5 md:col-span-2">
-                      <label className="text-sm text-emerald-900 font-black uppercase tracking-wide">
-                        রিচার্জ সার্ভিস বন্ধ থাকলে ব্যবহারকারীকে দেখানোর বার্তা (Coming Soon Notice)
-                      </label>
-                      <input
-                        type="text"
-                        value={settingsRechargeNoticeText}
-                        onChange={(e) => setSettingsRechargeNoticeText(e.target.value)}
-                        placeholder="আমাদের মোবাইল রিচার্জ সেবাটি খুব শীঘ্রই চালু হতে যাচ্ছে! সাথেই থাকুন।"
-                        className="w-full px-3 py-2.5 rounded-xl border border-emerald-200 bg-white focus:outline-none focus:border-emerald-500 font-semibold text-slate-800"
-                      />
-                    </div>
-
-                    {/* API Provider Type */}
-                    <div className="space-y-1.5">
-                      <label className="text-sm text-emerald-900 font-black uppercase tracking-wide">
-                        API প্রোভাইডার মেথড
-                      </label>
-                      <select
-                        value={settingsRechargeApiProvider}
-                        onChange={(e) => setSettingsRechargeApiProvider(e.target.value)}
-                        className="w-full px-3 py-2.5 rounded-xl border border-emerald-200 bg-white focus:outline-none focus:border-emerald-500 font-bold text-slate-800 cursor-pointer"
-                      >
-                        <option value="generic">Standard REST API (JSON POST Request)</option>
-                        <option value="get_param">URL Query Parameters API (GET Request)</option>
-                      </select>
-                    </div>
-
-                    {/* API Endpoint URL */}
-                    <div className="space-y-1.5 md:col-span-2">
-                      <label className="text-sm text-emerald-900 font-black uppercase tracking-wide flex items-center justify-between">
-                        <span>Success TopUp / SpeedDigit API Endpoint URL (অটো রিচার্জ গেটওয়ে)</span>
-                        <span className="text-xs bg-emerald-600 text-white px-2 py-0.5 rounded font-bold">সাকসেস টপ-আপ</span>
-                      </label>
-                      <input
-                        type="url"
-                        value={settingsRechargeApiUrl}
-                        onChange={(e) => setSettingsRechargeApiUrl(e.target.value)}
-                        placeholder="https://successtopup.com/api/v1/topup"
-                        className="w-full px-3 py-2.5 rounded-xl border border-emerald-200 bg-white focus:outline-none focus:border-emerald-500 font-mono font-bold text-slate-800 text-xs"
-                      />
-                    </div>
-
-                    {/* API Key */}
-                    <div className="space-y-1.5">
-                      <label className="text-sm text-emerald-900 font-black uppercase tracking-wide">
-                        API Key (সাকসেস টপ-আপ এপিআই কি)
-                      </label>
-                      <input
-                        type="text"
-                        value={settingsRechargeApiKey}
-                        onChange={(e) => setSettingsRechargeApiKey(e.target.value)}
-                        placeholder="st_71a8ccbfdd954b6d3a997f6b1039edca"
-                        className="w-full px-3 py-2.5 rounded-xl border border-emerald-200 bg-white focus:outline-none focus:border-emerald-500 font-mono font-bold text-slate-800 text-xs"
-                      />
-                    </div>
-
-                    {/* API Secret */}
-                    <div className="space-y-1.5">
-                      <label className="text-sm text-emerald-900 font-black uppercase tracking-wide">
-                        API Secret (সাকসেস টপ-আপ এপিআই সিক্রেট)
-                      </label>
-                      <input
-                        type="text"
-                        value={settingsRechargeApiSecret}
-                        onChange={(e) => setSettingsRechargeApiSecret(e.target.value)}
-                        placeholder="st_79e4a1cbe04876bf69dd6da7d09ae9108279aeac596f50f77e86a37919a09d07"
-                        className="w-full px-3 py-2.5 rounded-xl border border-emerald-200 bg-white focus:outline-none focus:border-emerald-500 font-mono font-bold text-slate-800 text-xs"
-                      />
-                    </div>
-
-                    {/* API Username / Client ID */}
-                    <div className="space-y-1.5 md:col-span-2">
-                      <label className="text-sm text-emerald-900 font-black uppercase tracking-wide">
-                        API Username / Client ID (যদি প্রয়োজন হয়)
-                      </label>
-                      <input
-                        type="text"
-                        value={settingsRechargeApiUsername}
-                        onChange={(e) => setSettingsRechargeApiUsername(e.target.value)}
-                        placeholder="ইউজারনেম (ঐচ্ছিক)"
-                        className="w-full px-3 py-2.5 rounded-xl border border-emerald-200 bg-white focus:outline-none focus:border-emerald-500 font-mono font-bold text-slate-800 text-xs"
-                      />
-                    </div>
-
-                    {/* Auto Trigger Toggle */}
-                    <div className="md:col-span-2 pt-1 flex items-center justify-between bg-white/80 p-3 rounded-xl border border-emerald-200/70">
-                      <div>
-                        <span className="text-xs font-black text-emerald-950 block">স্বয়ংক্রিয় এপিআই এক্সিকিউশন (Instant Auto-Recharge)</span>
-                        <span className="text-sm text-slate-500 font-bold block">পেমেন্ট সফল হওয়ার সাথে সাথে ব্যাকএন্ড সার্ভার এপিআই কল করে রিচার্জ সম্পন্ন করবে।</span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setSettingsRechargeAutoTrigger(!settingsRechargeAutoTrigger)}
-                        className={`px-3 py-1 rounded-lg text-sm font-black cursor-pointer transition-all ${
-                          settingsRechargeAutoTrigger
-                            ? 'bg-emerald-600 text-white'
-                            : 'bg-slate-200 text-slate-700'
-                        }`}
-                      >
-                        {settingsRechargeAutoTrigger ? 'অটো ট্রিগার ON' : 'ম্যানুয়াল প্যানেল OFF'}
-                      </button>
-                    </div>
-
-                    {/* API Test Connection Button */}
-                    <div className="md:col-span-2 pt-1">
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          if (!settingsRechargeApiUrl || !settingsRechargeApiKey) {
-                            alert('⚠️ এপিআই টেস্ট করার জন্য প্রথমে API Endpoint URL এবং API Key ঘরগুলো পূরণ করুন।');
-                            return;
-                          }
-                          try {
-                            const res = await fetch('/api/recharge', {
-                              method: 'POST',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({
-                                phone: '01700000000',
-                                amount: 10,
-                                operator: 'GP',
-                                rechargeType: 'flexiload'
-                              })
-                            });
-                            const data = await res.json();
-                            if (data.success) {
-                              alert('🎉 এপিআই কানেকশন সফল হয়েছে! প্রোভাইডার থেকে উত্তর:\n' + JSON.stringify(data.data || data, null, 2));
-                            } else {
-                              alert('⚠️ এপিআই রেসপন্স:\n' + (data.message || JSON.stringify(data, null, 2)));
-                            }
-                          } catch (err: any) {
-                            alert('❌ এপিআই টেস্টে ভুল হয়েছে: ' + (err.message || String(err)));
-                          }
-                        }}
-                        className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-black text-xs rounded-xl transition-all shadow-xs inline-flex items-center gap-1.5 cursor-pointer"
-                      >
-                        <RefreshCw className="w-3.5 h-3.5" />
-                        <span>এপিআই কানেকশন টেস্ট করুন (Test API)</span>
-                      </button>
-                    </div>
-
-                  </div>
-                </div>
-
-              {/* Card 7: Ownership Security & Global Save */}
-              <div className="bg-white rounded-[32px] border-2 border-rose-100 shadow-xl shadow-rose-900/5 overflow-hidden flex flex-col lg:col-span-2 transform hover:scale-[1.01] transition-all">
-                <div className="px-8 py-6 bg-rose-50 border-b border-rose-100 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shadow-inner">
-                      <ShieldCheck className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-black text-rose-900 uppercase tracking-wider">৭. মালিকানা সিকিউরিটি ও লগইন কনফিগারেশন</h3>
-                      <p className="text-[11px] font-bold text-rose-600/70 uppercase tracking-widest mt-0.5">অত্যন্ত গোপনীয় সেটিংস</p>
-                    </div>
-                  </div>
-                  <div className="px-3 py-1 bg-rose-200/50 rounded-full text-[10px] font-black text-rose-700 uppercase tracking-tighter">
-                    Admin Access Only
-                  </div>
-                </div>
-                <div className="p-8">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                    <div className="space-y-2.5">
-                      <label className="flex items-center gap-2 text-xs font-black text-slate-700 uppercase tracking-widest ml-1">
-                        <User className="w-3.5 h-3.5 text-rose-500" />
-                        এডমিন সিক্রেট নাম্বার (ইউজার আইডি)
-                      </label>
-                      <input 
-                        type="text" 
-                        required 
-                        value={settingsAdminNumber} 
-                        onChange={(e) => setSettingsAdminNumber(e.target.value)} 
-                        className="w-full px-5 py-4 rounded-2xl border-2 border-slate-100 bg-slate-50 focus:bg-white focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10 transition-all font-black text-slate-900 shadow-sm" 
-                        placeholder="এডমিন মোবাইল নাম্বার"
-                      />
-                      <p className="text-[10px] font-bold text-slate-400 ml-1">লগইন করার সময় এটি ইউজার আইডি হিসেবে ব্যবহৃত হবে।</p>
-                    </div>
-                    <div className="space-y-2.5">
-                      <label className="flex items-center gap-2 text-xs font-black text-slate-700 uppercase tracking-widest ml-1">
-                        <Lock className="w-3.5 h-3.5 text-rose-500" />
-                        এডমিন সিক্রেট পাসওয়ার্ড
-                      </label>
-                      <input 
-                        type="text" 
-                        required 
-                        value={settingsAdminPassword} 
-                        onChange={(e) => setSettingsAdminPassword(e.target.value)} 
-                        className="w-full px-5 py-4 rounded-2xl border-2 border-slate-100 bg-slate-50 focus:bg-white focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10 transition-all font-black text-slate-900 shadow-sm" 
-                        placeholder="স্ট্রং পাসওয়ার্ড দিন"
-                      />
-                      <p className="text-[10px] font-bold text-slate-400 ml-1">আপনার এডমিন প্যানেলের সুরক্ষার জন্য একটি কঠিন পাসওয়ার্ড ব্যবহার করুন।</p>
-                    </div>
-                  </div>
-
-                  <button 
-                    type="button" 
-                    onClick={async () => {
-                      try {
-                        await onUpdateSettings(getCurrentSettingsState());
-                        alert('🎉 সকল সেটিংস সফলভাবে আপডেট করা হয়েছে!');
-                      } catch (err: any) {
-                        alert('❌ আপডেট করতে সমস্যা হয়েছে: ' + (err?.message || String(err)));
-                      }
-                    }}
-                    className="w-full py-5 bg-gradient-to-r from-slate-900 to-black text-white rounded-[24px] font-black text-sm uppercase tracking-[0.2em] shadow-2xl shadow-slate-900/40 hover:shadow-slate-900/60 hover:-translate-y-1 active:translate-y-0 transition-all flex items-center justify-center gap-3 group"
-                  >
-                    <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <Check className="w-5 h-5 text-emerald-400 stroke-[3]" />
-                    </div>
-                    সব সেটিংস সেভ করুন
-                  </button>
-                  <p className="text-center text-[10px] font-black text-slate-400 uppercase tracking-widest mt-6 flex items-center justify-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                    সেভ বাটনে ক্লিক করলে আপনার সমস্ত পরিবর্তন সার্ভারে সংরক্ষিত হবে
-                  </p>
-                </div>
-              </div>
             </div>
 
             {/* Part 2: Software Download Link Manager */}
@@ -2801,8 +2611,6 @@ export default function AdminPanel({
 
             </div>
 
-            </div>
-
 
             {/* Part 5: Custom Domain (fahiminternet.com) & Google Search Setup Guide */}
             <div className="p-6 bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 text-white rounded-2xl border border-emerald-900/40 space-y-5 shadow-lg">
@@ -2842,6 +2650,7 @@ export default function AdminPanel({
                   </p>
                 </div>
               </div>
+            </div>
             </div>
           </div>
         )}
