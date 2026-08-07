@@ -1,0 +1,7 @@
+const fs = require('fs');
+let code = fs.readFileSync('src/components/PaymentPartnersGrid.tsx', 'utf8');
+
+// There is a duplicated block in the code, let's fix it
+code = code.replace(/<\/div>\s*\{\/\* Nagad badge \*\/\}\s*<div className="bg-white border border-slate-200\/80 rounded-xl p-1 h-11 flex items-center justify-center shadow-sm hover:scale-105 transition-transform duration-200">\s*<NagadLogo className="h-9 w-9" \/>\s*<\/div>\s*\{\/\* Rocket badge \*\/\}\s*<div className="bg-white border border-slate-200\/80 rounded-xl p-1 h-11 flex items-center justify-center shadow-sm hover:scale-105 transition-transform duration-200">\s*<RocketLogo className="h-9 w-9" \/>\s*<\/div>\s*\{\/\* Upay badge \*\/\}\s*<div className="bg-white border border-slate-200\/80 rounded-xl p-1 h-11 flex items-center justify-center shadow-sm hover:scale-105 transition-transform duration-200">\s*<UpayLogo className="h-9 w-9" \/>\s*<\/div>\s*\{\/\* Cellfin badge \*\/\}\s*<div className="bg-white border border-slate-200\/80 rounded-xl p-1 h-11 flex items-center justify-center shadow-sm hover:scale-105 transition-transform duration-200">\s*<CellfinLogo className="h-9 w-9" \/>\s*<\/div>\s*\{\/\* Bank badge \*\/\}\s*<div className="bg-white border border-slate-200\/80 rounded-xl p-1 h-11 flex items-center justify-center shadow-sm hover:scale-105 transition-transform duration-200">\s*<BankingLogo className="h-9 w-9" \/>\s*<\/div>\s*<\/div>/, '</div>');
+
+fs.writeFileSync('src/components/PaymentPartnersGrid.tsx', code);

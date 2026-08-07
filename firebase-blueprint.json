@@ -8,6 +8,7 @@
         "uid": { "type": "string" },
         "phone": { "type": "string" },
         "displayName": { "type": "string" },
+        "photoURL": { "type": "string", "description": "Profile picture Base64 or URL" },
         "role": { "type": "string", "enum": ["admin", "user"] },
         "createdAt": { "type": "string", "format": "date-time" },
         "fcmToken": { "type": "string" },
@@ -206,7 +207,15 @@
           "bkash": { "type": "string" },
           "nagad": { "type": "string" },
           "rocket": { "type": "string" },
-          "minDeposit": { "type": "number" }
+          "minDeposit": { "type": "number" },
+          "supportPhone": { "type": "string" },
+          "supportEmail": { "type": "string" },
+          "supportAddress": { "type": "string" },
+          "bkashNumber": { "type": "string" },
+          "nagadNumber": { "type": "string" },
+          "rocketNumber": { "type": "string" },
+          "marqueeText": { "type": "string" },
+          "bannerImages": { "type": "array", "items": { "type": "string" } }
         }
       },
       "description": "Global system parameters"

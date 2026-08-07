@@ -1,0 +1,23 @@
+# .gcloudignore
+# This file specifies which files should be ignored when deploying to Google Cloud.
+
+# Ignore git and local build caches
+.git/
+.github/
+node_modules/
+dist/
+.env
+.env.*
+*.log
+
+# Explicitly ensure these essential project files are NOT ignored
+!package.json
+!package-lock.json
+!tsconfig.json
+!vite.config.ts
+!server.ts
+!src/
+!public/
+!apphosting.yaml
+!firebase.json
+!firestore.rules

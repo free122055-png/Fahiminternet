@@ -1,0 +1,9 @@
+runConfig:
+  cpu: 1
+  memoryMiB: 1024
+  maxInstances: 10
+  minInstances: 0
+  runCommand: "npm start"
+env:
+  - variable: ZINIPAY_API_KEY
+    value: "6504f874e6643cbf66ccfddc919ed56aacfb88f02ecabc90"

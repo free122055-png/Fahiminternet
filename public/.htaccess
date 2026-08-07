@@ -1,0 +1,22 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # 1. Redirect non-WWW to WWW for fahiminternet.com
+  RewriteCond %{HTTP_HOST} ^fahiminternet\.com$ [NC]
+  RewriteRule ^(.*)$ https://www.fahiminternet.com/$1 [R=301,L]
+
+  # 2. Redirect non-WWW to WWW for fahiminternetbd.com
+  RewriteCond %{HTTP_HOST} ^fahiminternetbd\.com$ [NC]
+  RewriteRule ^(.*)$ https://www.fahiminternet.com/$1 [R=301,L]
+
+  # 3. Forward all API calls to the PHP Dynamic API Router
+  RewriteCond %{REQUEST_URI} ^/api/(.*)$ [NC]
+  RewriteRule ^api/(.*)$ api.php?route=$1 [QSA,L]
+
+  # 4. Support standard SPA React Client-Side routes
+  RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.html [L]
+</IfModule>
