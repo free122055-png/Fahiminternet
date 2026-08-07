@@ -12,10 +12,16 @@ jobs:
       - uses: actions/checkout@v4
       - run: npm install && npm run build
       - name: Deploy to Firebase Hosting
-        uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GEN_LANG_CLIENT_0777100836 || 'dummy' }}
-          channelId: live
-          projectId: gen-lang-client-0777100836
-        continue-on-error: true
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GEN_LANG_CLIENT_0777100836 }}
+        run: |
+          if [ -n "$FIREBASE_TOKEN" ]; then
+            npx firebase-tools deploy --only hosting --token "$FIREBASE_TOKEN" --project gen-lang-client-0777100836
+          elif [ -n "$FIREBASE_SERVICE_ACCOUNT" ]; then
+            echo "$FIREBASE_SERVICE_ACCOUNT" > service_account.json
+            export GOOGLE_APPLICATION_CREDENTIALS=service_account.json
+            npx firebase-tools deploy --only hosting --project gen-lang-client-0777100836
+          else
+            echo "⚠️ No Firebase token or service account secret found in GitHub Repository Secrets. Skipping automated deploy."
+          fi

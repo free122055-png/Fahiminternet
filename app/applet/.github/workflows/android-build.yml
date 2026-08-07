@@ -37,11 +37,15 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
-      - name: Fix / Download Gradle Wrapper Jar
+      - name: Fix / Recreate Gradle Wrapper
+        working-directory: ./android
         run: |
-          cd android
-          rm -f gradle/wrapper/gradle-wrapper.jar
-          curl -sL https://raw.githubusercontent.com/gradle/gradle/v8.5.0/gradle/wrapper/gradle-wrapper.jar -o gradle/wrapper/gradle-wrapper.jar
+          rm -rf gradle/wrapper/gradle-wrapper.jar
+          curl -L -o gradle/wrapper/gradle-wrapper.jar https://raw.githubusercontent.com/gradle/gradle/v8.5.0/subprojects/wrapper/src/main/resources/org/gradle/wrapper/gradle-wrapper.jar || true
+          if [ ! -s gradle/wrapper/gradle-wrapper.jar ]; then
+            echo "Downloading fallback gradle wrapper jar..."
+            curl -L -o gradle/wrapper/gradle-wrapper.jar https://github.com/gradle/gradle/raw/v8.5.0/gradle/wrapper/gradle-wrapper.jar || true
+          fi
           chmod +x gradlew
 
       - name: Setup Gradle
@@ -49,7 +53,7 @@ jobs:
 
       - name: Build Android App Bundle (AAB)
         working-directory: ./android
-        run: ./gradlew bundleRelease
+        run: ./gradlew bundleRelease --no-daemon
 
       - name: Upload AAB Artifact
         uses: actions/upload-artifact@v4
