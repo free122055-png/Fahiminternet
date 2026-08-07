@@ -278,7 +278,7 @@ const getDirname = () => {
 async function startServer() {
   const app = express();
   // Use PORT from environment variable if available (required for Cloud Run / Firebase App Hosting), otherwise default to 3000
-  const PORT = 3000;
+  const PORT = Number(process.env.PORT) || 3000;
 
   // Domain redirection & canonical host middleware:
   // Automatically redirects root domain (fahiminternet.com & fahiminternetbd.com) to main domain (www.fahiminternet.com)
