@@ -37,22 +37,21 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
-      - name: Fix Corrupt Gradle Wrapper Jar
-        run: |
-          mkdir -p android/gradle/wrapper
-          curl -L -o android/gradle/wrapper/gradle-wrapper.jar https://github.com/gradle/gradle/raw/v8.10.2/gradle/wrapper/gradle-wrapper.jar
-
-      - name: Make Gradlew Executable
-        run: chmod +x android/gradlew
-
-      - name: Setup Gradle
+      - name: Setup Gradle System
         uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: '8.10.2'
 
+      - name: Update SDK to 36
+        run: |
+          sed -i 's/compileSdkVersion = 35/compileSdkVersion = 36/g' android/variables.gradle || true
+          sed -i 's/targetSdkVersion = 35/targetSdkVersion = 36/g' android/variables.gradle || true
+          sed -i 's/compileSdkVersion 35/compileSdkVersion 36/g' android/app/build.gradle || true
+          sed -i 's/compileSdk 35/compileSdk 36/g' android/app/build.gradle || true
+
       - name: Build Android App Bundle (AAB)
         working-directory: ./android
-        run: ./gradlew bundleRelease -Pandroid.suppressUnsupportedCompileSdk=36
+        run: gradle bundleRelease -Pandroid.suppressUnsupportedCompileSdk=36
 
       - name: Upload AAB Artifact
         uses: actions/upload-artifact@v4
