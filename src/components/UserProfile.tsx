@@ -280,7 +280,7 @@ export default function UserProfile({ currentUser, settings, onLogout, onAction,
             {settings?.brandName || 'FAHIM INTERNET'} {settings?.appVersion || 'v1.0.0'}
           </p>
           <p className="text-[10px] font-bold text-slate-400">
-            Developer Email: <span className="text-slate-500 font-black">{settings?.developerEmail || 'support@fahiminternet.com'}</span>
+            Developer Email: <span className="text-slate-500 font-black">{settings?.developerEmail || 'rajibulislamfahim8610@gmail.com'}</span>
           </p>
           <p className="text-[9px] text-slate-300 font-medium px-4 leading-relaxed">
             আমরা কোনো ব্যক্তিগত সংবেদনশীল তথ্য সংগ্রহ করি না। সকল তথ্য Google Play পলিসি অনুযায়ী এনক্রিপ্টেড এবং সুরক্ষিত।

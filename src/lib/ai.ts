@@ -70,7 +70,9 @@ export const getGeminiResponse = async (prompt: string, systemInstruction?: stri
     console.error("Critical Gemini API Error:", error);
     const msg = error?.message || String(error);
     
-    if (msg.includes('429')) return "বেশি রিকোয়েস্ট আসছে। একটু পর ট্রাই করুন।";
+    if (msg.includes('429') || msg.includes('resource_exhausted') || msg.includes('quota') || msg.includes('Quota')) {
+      return "এআই সার্ভার কোটা বা লিমিট সাময়িকভাবে শেষ হয়ে গেছে। দয়া করে কিছুক্ষণ পর আবার চেষ্টা করুন।";
+    }
     if (msg.includes('API_KEY')) return "সার্ভার কনফিগারেশন ত্রুটি। এডমিনকে জানান।";
     
     return "এআই প্রোটোকল ত্রুটি। আপনার অনুরোধ আবার করার জন্য অনুরোধ করছি। (Error: " + msg.substring(0, 50) + ")";

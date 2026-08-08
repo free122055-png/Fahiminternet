@@ -1386,7 +1386,7 @@ export function AboutUs({ userId, settings }: SectionProps) {
   const appName = settings?.brandName || 'FAHIM INTERNET';
   const version = settings?.appVersion || 'v1.0.0';
   const devName = settings?.developerName || 'Rajibul Islam';
-  const devEmail = settings?.developerEmail || 'support@fahiminternet.com';
+  const devEmail = settings?.developerEmail || 'rajibulislamfahim8610@gmail.com';
 
   return (
     <div className="space-y-4 text-center animate-in fade-in duration-300">
@@ -1608,7 +1608,7 @@ export function TermsConditions({ userId, settings }: SectionProps) {
 
 export function ContactUs({ userId, settings }: SectionProps) {
   const phone = settings?.supportPhone || '01618599077';
-  const email = settings?.supportEmail || 'support@fahiminternet.com';
+  const email = settings?.supportEmail || 'rajibulislamfahim8610@gmail.com';
   const website = settings?.supportWebsite || 'https://fahiminternet.com';
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);

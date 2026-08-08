@@ -37,16 +37,17 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
-      - name: Fix / Recreate Gradle Wrapper
+      - name: Fix / Generate Robust Gradle Wrapper
         working-directory: ./android
         run: |
           rm -rf gradle/wrapper/gradle-wrapper.jar
-          curl -L -o gradle/wrapper/gradle-wrapper.jar https://raw.githubusercontent.com/gradle/gradle/v8.5.0/subprojects/wrapper/src/main/resources/org/gradle/wrapper/gradle-wrapper.jar || true
-          if [ ! -s gradle/wrapper/gradle-wrapper.jar ]; then
-            echo "Downloading fallback gradle wrapper jar..."
-            curl -L -o gradle/wrapper/gradle-wrapper.jar https://github.com/gradle/gradle/raw/v8.5.0/gradle/wrapper/gradle-wrapper.jar || true
-          fi
+          echo "Downloading Gradle 8.5 distribution to extract wrapper jar..."
+          curl -L -o gradle-8.5-bin.zip https://services.gradle.org/distributions/gradle-8.5-bin.zip
+          unzip -q gradle-8.5-bin.zip
+          cp gradle-8.5/lib/plugins/gradle-wrapper*.jar gradle/wrapper/gradle-wrapper.jar
+          rm -rf gradle-8.5 gradle-8.5-bin.zip
           chmod +x gradlew
+          echo "Gradle wrapper generated successfully."
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3

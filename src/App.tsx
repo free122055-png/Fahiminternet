@@ -205,14 +205,14 @@ const DEFAULT_WIFI_PACKAGES: WifiPackage[] = [
 
 const DEFAULT_SETTINGS: SiteSettings = {
   supportPhone: '01618599077',
-  supportEmail: 'support@fahiminternet.com',
+  supportEmail: 'rajibulislamfahim8610@gmail.com',
   supportAddress: 'ফাহিম টেলিকম সেন্টার, মিরপুর ১০, ঢাকা, বাংলাদেশ।',
   supportWebsite: 'https://fahiminternet.com',
   privacyPolicyUrl: 'https://fahiminternet.com/privacy-policy',
   termsConditionsUrl: 'https://fahiminternet.com/terms-conditions',
   appVersion: 'v2.5.0 Premium',
   developerName: 'Rajibul Islam',
-  developerEmail: 'support@fahiminternet.com',
+  developerEmail: 'rajibulislamfahim8610@gmail.com',
   disclaimerText: 'This app is not affiliated with any telecom operator. We act as a third-party digital offer distribution platform. All services are subject to operator availability and terms.',
   bkashNumber: '01618599077',
   nagadNumber: '01624228476',

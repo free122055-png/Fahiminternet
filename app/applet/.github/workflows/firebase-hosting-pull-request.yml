@@ -24,5 +24,6 @@ jobs:
             export GOOGLE_APPLICATION_CREDENTIALS=service_account.json
             npx firebase-tools hosting:channel:deploy preview --project gen-lang-client-0777100836
           else
-            echo "⚠️ No Firebase token or service account secret found. Skipping preview deploy."
+            echo "⚠️ No Firebase token or service account secret found. Skipping preview deploy cleanly."
+            exit 0
           fi
