@@ -40,14 +40,13 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
-      - name: Download Gradle Wrapper JAR
+      - name: Fix and Download Valid Gradle Wrapper
         run: |
           mkdir -p android/gradle/wrapper
-          curl -sL https://raw.githubusercontent.com/gradle/gradle/master/gradle/wrapper/gradle-wrapper.jar -o android/gradle/wrapper/gradle-wrapper.jar
+          curl -L -o android/gradle/wrapper/gradle-wrapper.jar https://github.com/gradle/gradle/raw/master/gradle/wrapper/gradle-wrapper.jar
 
       - name: Build Android App Bundle (AAB)
-        working-directory: ./android
-        run: ./gradlew bundleRelease
+        run: cd android && ./gradlew bundleRelease
 
       - name: Upload AAB Artifact
         uses: actions/upload-artifact@v4
