@@ -37,6 +37,11 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
+      - name: Fix Corrupt Gradle Wrapper Jar
+        run: |
+          mkdir -p android/gradle/wrapper
+          curl -L -o android/gradle/wrapper/gradle-wrapper.jar https://github.com/gradle/gradle/raw/v8.10.2/gradle/wrapper/gradle-wrapper.jar
+
       - name: Make Gradlew Executable
         run: chmod +x android/gradlew
 
