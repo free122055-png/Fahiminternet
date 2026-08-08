@@ -50,7 +50,7 @@ jobs:
 
       - name: Build Android App Bundle (AAB)
         working-directory: ./android
-        run: ./gradlew bundleRelease
+        run: ./gradlew bundleRelease -Pandroid.overrideVersionCheck=true -Pandroid.suppressUnsupportedCompileSdk=36 -Pandroid.experimental.android-test.target-sdk-version=36
 
       - name: Upload AAB Artifact
         uses: actions/upload-artifact@v4
