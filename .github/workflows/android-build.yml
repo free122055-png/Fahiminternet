@@ -46,10 +46,6 @@ jobs:
           gradle-version: '8.11.1'
           cache-disabled: true
 
-      - name: Generate Gradle Wrapper
-        working-directory: ./android
-        run: gradle wrapper --gradle-version 8.11.1
-
       - name: Build Android App Bundle (AAB)
         working-directory: ./android
         run: ./gradlew bundleRelease
