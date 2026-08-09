@@ -40,9 +40,6 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
-      # Only change Version Code and Version Name.
-      # Do NOT modify UI, design, features, package name,
-      # SDK, dependencies, or any other Android configuration.
       - name: Set App Version 5
         run: |
           python3 - <<'PY'
@@ -159,13 +156,66 @@ jobs:
           cache-disabled: true
           validate-wrappers: false
 
+      - name: Prepare Release Signing
+        env:
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        run: |
+          set -e
+
+          echo "$RELEASE_KEYSTORE_BASE64" | base64 --decode > android/app/release.keystore
+
+          test -s android/app/release.keystore
+
+          python3 - <<'PY'
+          from pathlib import Path
+
+          file = Path("android/app/build.gradle")
+          content = file.read_text()
+
+          if "signingConfigs.release" not in content:
+              raise SystemExit("ERROR: signingConfigs.release was not found in android/app/build.gradle")
+
+          if "signingConfig signingConfigs.release" not in content:
+              content = content.replace(
+                  "release {",
+                  "release {\n            signingConfig signingConfigs.release",
+                  1
+              )
+
+          file.write_text(content)
+          print("Release signing configuration enabled.")
+          PY
+
+      - name: Verify Signing Configuration
+        run: |
+          test -f android/app/release.keystore
+          echo "Release keystore found."
+          grep -n "signingConfig" android/app/build.gradle || true
+
       - name: Build Android App Bundle
         working-directory: ./android
-        run: gradle bundleRelease --no-daemon
+        env:
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        run: |
+          gradle bundleRelease --no-daemon \
+            -Pandroid.injected.signing.store.file="$GITHUB_WORKSPACE/android/app/release.keystore" \
+            -Pandroid.injected.signing.store.password="$RELEASE_KEYSTORE_PASSWORD" \
+            -Pandroid.injected.signing.key.alias="$RELEASE_KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="$RELEASE_KEY_PASSWORD"
+
+      - name: Remove Keystore
+        if: always()
+        run: |
+          rm -f android/app/release.keystore
 
       - name: Upload AAB Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: app-bundle-version-5
+          name: app-bundle-version-5-signed
           path: android/app/build/outputs/bundle/release/*.aab
           retention-days: 7
