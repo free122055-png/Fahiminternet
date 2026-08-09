@@ -28,11 +28,15 @@ jobs:
           distribution: zulu
           java-version: 21
 
-      - name: Install Dependencies
-        run: npm install
+        - name: Install Dependencies
+    run: npm install
 
-      - name: Build Web Assets
-        run: npm run build
+  - name: Generate Android Icons
+    run: node generate_icons.js
+
+  - name: Build Web Assets
+    run: npm run build
+    
 
       - name: Sync Capacitor
         run: npx cap sync android
