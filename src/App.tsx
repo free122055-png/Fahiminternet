@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
-import { DataPack, Order, Operator, PackCategory, SiteSettings, WifiPackage } from './types';
+import { AppTab, DataPack, Order, Operator, PackCategory, SiteSettings, WifiPackage } from './types';
 import { INITIAL_PACKS } from './data';
 import Header from './components/Header';
 import Toast, { ToastType } from './components/Toast';
@@ -246,7 +246,7 @@ const DEFAULT_SETTINGS: SiteSettings = {
 export default function App() {
   const [renderError, setRenderError] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<'homepage' | 'store' | 'builder' | 'tracking' | 'admin' | 'privacy'>(() => {
+  const [activeTab, setActiveTab] = useState<AppTab>(() => {
     try {
       if (window.location.pathname === '/privacy-policy') return 'privacy';
       const params = new URLSearchParams(window.location.search);
@@ -256,6 +256,44 @@ export default function App() {
     } catch (e) {}
     return 'homepage';
   });
+
+  const [navigationStack, setNavigationStack] = useState<AppTab[]>(['homepage']);
+
+  // Android-like back navigation
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      if (navigationStack.length > 1) {
+        event.preventDefault();
+        const newStack = [...navigationStack];
+        newStack.pop();
+        const previousTab = newStack[newStack.length - 1];
+        setNavigationStack(newStack);
+        setActiveTab(previousTab);
+      } else {
+        // At root, show exit confirmation
+        if (confirm("আপনি কি অ্যাপ থেকে বের হয়ে যেতে চান?")) {
+          // This is technically not possible in a standard browser environment
+          // but we can close the window or handle it as per requirement.
+          window.close();
+        } else {
+          // Push state back to prevent exit
+          window.history.pushState(null, '', window.location.href);
+        }
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [navigationStack]);
+
+  const navigateTo = (tab: AppTab) => {
+    if (tab === activeTab) return;
+    
+    // Add to stack and history
+    window.history.pushState({ tab }, '', window.location.pathname + `?page=${tab}`);
+    setNavigationStack(prev => [...prev, tab]);
+    setActiveTab(tab);
+  };
   const [packs, setPacks] = useState<DataPack[]>(INITIAL_PACKS);
   const [orders, setOrders] = useState<Order[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -300,7 +338,7 @@ export default function App() {
         return;
       }
     }
-    setActiveTab(tab === 'store' ? 'homepage' : tab);
+    navigateTo(tab === 'store' ? 'homepage' : tab);
   };
 
   // Full Screen / Standalone tab tracking states
@@ -1552,7 +1590,7 @@ export default function App() {
               orders={orders}
               onLogout={handleLogout}
               onInitiatePurchase={handleInitiatePurchase}
-              onOpenAdmin={() => setActiveTab('admin')}
+              onOpenAdmin={() => navigateTo('admin')}
               onOpenAddMoney={() => {
                 handleInitiatePurchase({
                   id: 'add-money-pack',
@@ -1584,7 +1622,7 @@ export default function App() {
                 });
               }}
               onOpenSupport={() => setHelpModalOpen(true)}
-              onOpenTracker={() => setActiveTab('tracking')}
+              onOpenTracker={() => navigateTo('tracking')}
               onOpenProfile={() => {}}
               onOpenAuth={(msg) => { setAuthModalMessage(msg || ''); setAuthModalOpen(true); }}
               isAdmin={isAdmin}
@@ -1624,7 +1662,7 @@ export default function App() {
                 setAuthModalMessage(msg || '');
                 setAuthModalOpen(true);
               }}
-              onNavigateToHome={() => setActiveTab('homepage')}
+              onNavigateToHome={() => navigateTo('homepage')}
             />
           </div>
         )}

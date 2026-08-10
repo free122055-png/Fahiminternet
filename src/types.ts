@@ -1,4 +1,4 @@
-export type AppTab = 'homepage' | 'store' | 'builder' | 'tracking' | 'admin';
+export type AppTab = 'homepage' | 'store' | 'builder' | 'tracking' | 'admin' | 'privacy';
 
 export type Operator = 'GP' | 'Robi' | 'Airtel' | 'Banglalink' | 'Teletalk';
 
