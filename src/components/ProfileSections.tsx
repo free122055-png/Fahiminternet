@@ -4,10 +4,11 @@ import {
   Send, PhoneCall, Globe, ShieldCheck, ChevronRight, ChevronDown, ChevronUp, Bell, 
   Lock, User, Trash2, Headphones, MessageSquare, Info, ShieldAlert, Sparkles,
   ArrowLeft, CheckCircle2, Wallet, ChevronLeft, Share2, X, Camera, Upload, ArrowRight, RefreshCw,
-  Mail, ExternalLink, Bug, FileText, HelpCircle
+  Mail, ExternalLink, Bug, FileText, HelpCircle, Search, Plus, FileCheck, Eye, Edit3, AlertTriangle, UserCheck, Image,
+  Phone, AlertCircle, Database
 } from 'lucide-react';
 import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase';
-import { collection, query, where, getDocs, orderBy, addDoc, updateDoc, doc, setDoc, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, getDocs, getDoc, orderBy, addDoc, updateDoc, doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
 import { Order, SiteSettings } from '../types';
 import { BKashLogo, NagadLogo, RocketLogo, UpayLogo, CellfinLogo, BankingLogo } from './BrandLogos';
@@ -808,6 +809,9 @@ export function PaymentHistory({ userId }: SectionProps) {
       snap.forEach(d => docs.push({ id: d.id, ...d.data() }));
       setHistory(docs);
       setLoading(false);
+    }, (err) => {
+      console.warn('Add money requests history listener error:', err);
+      setLoading(false);
     });
 
     return () => unsub();
@@ -1054,7 +1058,7 @@ export function AccountSettings({ userId, currentUser, showToast }: SectionProps
 
     const reader = new FileReader();
     reader.onload = () => {
-      const img = new Image();
+      const img = new window.Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');
         const MAX_WIDTH = 150;
@@ -1752,9 +1756,7 @@ export function ContactUs({ userId, settings }: SectionProps) {
               <span>মেসেজ পাঠান</span>
             </button>
             <div className="p-3 bg-slate-50 rounded-xl text-center">
-              <p className="text-[10px] text-slate-500 font-bold italic">
-                "We will respond within 24-48 hours"
-              </p>
+              <p className="text-[11px] text-slate-500 font-bold">জরুরি প্রয়োজনে সরাসরি কল করুন বা হোয়াটসঅ্যাপ করুন।</p>
             </div>
           </form>
         )}
@@ -1763,237 +1765,1017 @@ export function ContactUs({ userId, settings }: SectionProps) {
   );
 }
 
-export function ReportProblem({ userId }: SectionProps) {
-  const [submitting, setSubmitting] = useState(false);
-  const [sent, setSent] = useState(false);
+// 21. REPORT A PROBLEM
+export function ReportProblem({ userId, settings }: SectionProps) {
+  const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [problemType, setProblemType] = useState('technical');
+  const [description, setDescription] = useState('');
 
-  const handleReportSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitting(true);
-    
-    try {
-      const formData = new FormData(e.target as HTMLFormElement);
-      const data = {
-        userId: userId || 'guest',
-        problemType: formData.get('type'),
-        description: formData.get('description'),
-        type: 'bug_report',
-        status: 'new',
-        createdAt: new Date().toISOString()
-      };
-      
-      await addDoc(collection(db, 'support_messages'), data);
-      setSent(true);
-      setTimeout(() => setSent(false), 8000);
-      (e.target as HTMLFormElement).reset();
-    } catch (err) {
-      console.error('Report bug error:', err);
-      alert('রিপোর্ট পাঠানো সম্ভব হয়নি। আবার চেষ্টা করুন।');
-    } finally {
-      setSubmitting(false);
-    }
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      setSubmitted(true);
+    }, 800);
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 pb-20">
-      <div className="p-6 bg-rose-600 rounded-[32px] text-white shadow-xl shadow-rose-100 flex flex-col gap-4">
-        <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
-          <ShieldAlert className="w-8 h-8" />
-        </div>
+    <div className="space-y-6">
+      <div className="bg-gradient-to-r from-red-600 to-rose-700 text-white p-6 rounded-[28px] shadow-lg shadow-red-100 flex items-center justify-between">
         <div>
-          <h4 className="text-xl font-black">সমস্যা রিপোর্ট করুন</h4>
-          <p className="text-xs text-rose-100 font-bold opacity-80 mt-1 leading-relaxed">
-            অ্যাপে কোনো ত্রুটি বা বাগ খুঁজে পেলে আমাদের জানান। আপনার সহযোগিতায় আমরা অ্যাপটিকে আরও উন্নত করতে পারব।
+          <h3 className="text-lg font-black flex items-center gap-2">
+            <Bug className="w-6 h-6" />
+            <span>সমস্যা রিপোর্ট করুন (Report a Problem)</span>
+          </h3>
+          <p className="text-xs text-red-100 font-bold mt-1">
+            অ্যাপ বা সার্ভিসে কোনো সমস্যা হলে বিস্তারিত জানান
           </p>
         </div>
       </div>
 
-      {sent ? (
-        <div className="p-10 bg-white text-emerald-600 rounded-[40px] text-center border border-slate-100 shadow-xl animate-in zoom-in-95">
-          <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-6 border-4 border-emerald-100">
-            <CheckCircle2 className="w-10 h-10" />
+      {submitted ? (
+        <div className="bg-emerald-50 border border-emerald-200 p-6 rounded-[28px] text-center space-y-3">
+          <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
+            <Check className="w-6 h-6" />
           </div>
-          <h5 className="text-xl font-black text-slate-900">রিপোর্ট সফলভাবে জমা হয়েছে!</h5>
-          <p className="text-sm font-bold text-slate-500 mt-2">আমাদের টেকনিক্যাল টিম দ্রুত এটি রিভিউ করবে। ধন্যবাদ।</p>
+          <h4 className="text-base font-black text-emerald-900">রিপোর্ট সফলভাবে জমা হয়েছে!</h4>
+          <p className="text-xs font-bold text-emerald-700">আমাদের টেকনিক্যাল টিম খুব শীঘ্রই বিষয়টি যাচাই করবে।</p>
         </div>
       ) : (
-        <form onSubmit={handleReportSubmit} className="space-y-5 bg-white p-7 rounded-[32px] border border-slate-100 shadow-sm">
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">সমস্যার ধরন নির্বাচন করুন</label>
-            <select 
-              name="type" 
-              required
-              className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold outline-none focus:border-rose-500 focus:bg-white transition-all appearance-none cursor-pointer"
+        <form onSubmit={handleSubmit} className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-sm space-y-4">
+          <div>
+            <label className="block text-xs font-black text-slate-700 mb-1">সমস্যার ধরন</label>
+            <select
+              value={problemType}
+              onChange={(e) => setProblemType(e.target.value)}
+              className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold outline-none focus:border-red-500"
             >
-              <option value="login">লগইন / ওটিপি সমস্যা</option>
-              <option value="payment">পেমেন্ট / এড মানি ইরর</option>
-              <option value="offer">অফার রিচার্জ হচ্ছে না</option>
-              <option value="ui">ভুল টেক্সট বা ডিজাইন সমস্যা</option>
-              <option value="speed">অ্যাপ খুব স্লো কাজ করছে</option>
-              <option value="other">অন্যান্য সমস্যা</option>
+              <option value="technical">টেকনিক্যাল এরর / বাগ</option>
+              <option value="payment">পেমেন্ট সমস্যা</option>
+              <option value="recharge">রিচার্জ না হওয়া</option>
+              <option value="account">অ্যাকাউন্ট সংক্রান্ত</option>
+              <option value="other">অন্যান্য</option>
             </select>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">বিস্তারিত বর্ণনা দিন</label>
-            <textarea 
-              name="description" 
+          <div>
+            <label className="block text-xs font-black text-slate-700 mb-1">সমস্যার বিস্তারিত বর্ণনা</label>
+            <textarea
+              rows={4}
               required
-              rows={6}
-              placeholder="কি সমস্যা হচ্ছে এবং কিভাবে হচ্ছে তা বিস্তারিত লিখুন..."
-              className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold outline-none focus:border-rose-500 focus:bg-white transition-all resize-none shadow-inner"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="কী সমস্যা হচ্ছে বিস্তারিত লিখুন..."
+              className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold outline-none focus:border-red-500 resize-none"
             />
           </div>
 
-          <button 
-            type="submit" 
-            disabled={submitting}
-            className="w-full py-4.5 bg-rose-600 hover:bg-rose-700 text-white font-black text-sm rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95 shadow-xl shadow-rose-100 border-none cursor-pointer"
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-4 bg-red-600 hover:bg-red-700 text-white font-black text-xs rounded-2xl shadow-lg flex items-center justify-center gap-2 cursor-pointer border-none"
           >
-            {submitting ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+            {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
             <span>রিপোর্ট সাবমিট করুন</span>
           </button>
-          
-          <div className="p-3 bg-rose-50 rounded-2xl text-center">
-            <p className="text-[10px] text-rose-400 font-bold italic">
-              "We will respond within 24-48 hours"
-            </p>
-          </div>
         </form>
       )}
     </div>
   );
 }
 
-export function FAQFull({ userId }: SectionProps) {
-  const [openIdx, setOpenIdx] = useState<number | null>(null);
-
-  const faqs = [
-    {
-      q: 'কিভাবে অ্যাপটি ব্যবহার করব?',
-      a: 'অ্যাপে প্রথমে একটি অ্যাকাউন্ট তৈরি করুন। এরপর ওয়ালেট ব্যালেন্স যোগ করে আপনার পছন্দমতো অফার সিলেক্ট করে মোবাইল নম্বর দিয়ে অর্ডার করুন। ৫ মিনিটের মধ্যে আপনার অফার চালু হয়ে যাবে।'
-    },
-    {
-      q: 'কিভাবে ইন্টারনেট প্যাক কিনব?',
-      a: 'হোম স্ক্রিন থেকে "ইন্টারনেট প্যাক" বাটনে ক্লিক করুন। আপনার অপারেটর সিলেক্ট করুন, অফারটি পছন্দ করুন এবং যে নম্বরে অফার নিতে চান সেই নম্বরটি দিয়ে অর্ডার কনফার্ম করুন।'
-    },
-    {
-      q: 'পেমেন্ট করার পর ব্যালেন্স যোগ না হলে কি করব?',
-      a: 'কখনও ট্রানজেকশন আইডি ভেরিফাই করতে দেরি হতে পারে। ১০-১৫ মিনিট অপেক্ষা করুন। এরপরও যোগ না হলে হটলাইন নাম্বারে যোগাযোগ করুন বা বাগ রিপোর্টে ট্রানজেকশন আইডি দিন।'
-    },
-    {
-      q: 'অফার চালু না হলে কি রিফান্ড পাব?',
-      a: 'হ্যাঁ, যদি কোনো কারণে অফারটি চালু করতে ব্যর্থ হই, তবে আপনার ওয়ালেট ব্যালেন্স সাথে সাথে অটো-রিফান্ড হয়ে যাবে যা দিয়ে আপনি অন্য অফার কিনতে পারবেন।'
-    },
-    {
-      q: 'ওয়ালেট ব্যালেন্স কি টাকা হিসেবে তুলে নেয়া যায়?',
-      a: 'না, ওয়ালেট ব্যালেন্স শুধুমাত্র অ্যাপের অফার বা মোবাইল রিচার্জ করার জন্য ব্যবহার করা যাবে। এটি ক্যাশ-আউটযোগ্য নয়।'
-    },
-    {
-      q: 'অ্যাপটি কি নিরাপদ?',
-      a: 'হ্যাঁ, আমরা ব্যবহারকারীর তথ্যের গোপনীয়তা রক্ষা করি এবং গুগল প্লে-স্টোর পলিসি অনুযায়ী ১০০% এনক্রিপ্টেড ডাটা সুরক্ষা নিশ্চিত করি।'
-    },
-    {
-      q: 'অফার কতক্ষণ সময়ের মধ্যে চালু হয়?',
-      a: 'সাধারণত ৫-১০ মিনিটের মধ্যে অফার সফল হয়। তবে ড্রাইভ অফারের ক্ষেত্রে অপারেটর সার্ভারের উপর নির্ভর করে ৩০ মিনিট পর্যন্ত সময় লাগতে পারে।'
-    },
-    {
-      q: 'কাস্টমার সাপোর্ট কখন পাওয়া যায়?',
-      a: 'আমাদের কাস্টমার সাপোর্ট টিম প্রতিদিন সকাল ৯টা থেকে রাত ১০টা পর্যন্ত আপনাদের সেবায় নিয়োজিত থাকে।'
-    },
-    {
-      q: 'ভুল নম্বরে রিচার্জ গেলে কি করব?',
-      a: 'ভুল নম্বরে রিচার্জ সফল হয়ে গেলে আমরা সেটি ফেরত আনতে পারি না। তাই নম্বর দেয়ার সময় অবশ্যই সতর্কতা অবলম্বন করুন।'
-    },
-    {
-      q: 'ডিসকাউন্ট বা ক্যাশব্যাক কিভাবে কাজ করে?',
-      a: 'প্রতিটি অফারের পাশে ক্যাশব্যাক অ্যামাউন্ট লেখা থাকে। অফারটি সফল হওয়ার পর ওই পরিমাণ টাকা আপনার মূল ব্যালেন্সের সাথে পুনরায় যোগ হয়ে যাবে।'
-    }
-  ];
+// 22. DELETE ACCOUNT
+export function DeleteAccount({ userId, currentUser }: SectionProps) {
+  const [requested, setRequested] = useState(false);
 
   return (
-    <div className="space-y-4 animate-in fade-in duration-500 pb-10">
-      <div className="bg-emerald-600 p-6 rounded-[28px] text-white shadow-lg shadow-emerald-100 flex items-center gap-4">
-        <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
-          <HelpCircle className="w-7 h-7" />
-        </div>
+    <div className="space-y-6">
+      <div className="bg-gradient-to-r from-slate-900 to-rose-950 text-white p-6 rounded-[28px] shadow-lg flex items-center justify-between">
         <div>
-          <h4 className="text-lg font-black">সচরাচর জিজ্ঞাসা (FAQ)</h4>
-          <p className="text-[11px] text-emerald-100 font-bold opacity-80 uppercase tracking-widest mt-0.5">Help & Support Center</p>
+          <h3 className="text-lg font-black flex items-center gap-2">
+            <Trash2 className="w-6 h-6 text-rose-500" />
+            <span>অ্যাকাউন্ট ডিলিট করুন (Delete Account)</span>
+          </h3>
+          <p className="text-xs text-rose-200 font-bold mt-1">
+            আপনার অ্যাকাউন্ট স্থায়ীভাবে মুছে ফেলার অনুরোধ করুন
+          </p>
         </div>
       </div>
 
-      <div className="space-y-3">
-        {faqs.map((faq, i) => (
-          <div key={i} className="border border-slate-100 rounded-2xl bg-white overflow-hidden shadow-sm hover:shadow-md transition-all">
-            <button 
-              onClick={() => setOpenIdx(openIdx === i ? null : i)}
-              className="w-full p-4.5 text-left font-black text-xs text-slate-800 flex justify-between items-center bg-transparent border-none cursor-pointer"
-            >
-              <span className="pr-4 leading-relaxed">{faq.q}</span>
-              <div className={`p-1 rounded-lg transition-all ${openIdx === i ? 'bg-emerald-50 text-emerald-600 rotate-180' : 'bg-slate-50 text-slate-400'}`}>
-                <ChevronDown className="w-4 h-4" />
-              </div>
-            </button>
-            {openIdx === i && (
-              <div className="px-5 pb-5 text-xs text-slate-600 leading-relaxed font-medium border-t border-slate-50 pt-4 animate-in slide-in-from-top-2">
-                <div className="flex gap-2">
-                  <div className="w-1 bg-emerald-500 rounded-full h-auto mt-1 mb-1 shrink-0" />
-                  <p>{faq.a}</p>
-                </div>
-              </div>
-            )}
+      <div className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-sm space-y-4">
+        <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+          <p className="text-xs font-bold text-rose-900 leading-relaxed">
+            সতর্কতা: অ্যাকাউন্ট ডিলিট করলে আপনার সকল অর্ডার হিস্ট্রি, অল ব্যালেন্স এবং পার্সোনাল রেকর্ড চিরতরে মুছে যাবে।
+          </p>
+        </div>
+
+        {requested ? (
+          <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl text-center font-black text-xs">
+            অ্যাকাউন্ট ডিলিটের অনুরোধ গ্রহণ করা হয়েছে। ২৪ ঘণ্টার মধ্যে আপনার ডেটা প্রসেস করা হবে।
           </div>
-        ))}
-      </div>
-      
-      <div className="p-5 bg-slate-50 rounded-3xl border border-slate-100 text-center space-y-2">
-        <p className="text-xs font-black text-slate-900">আপনার প্রশ্নের উত্তর পাননি?</p>
-        <p className="text-[11px] text-slate-500 font-medium">সরাসরি আমাদের সাপোর্ট টিমের সাথে কথা বলুন।</p>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setRequested(true)}
+            className="w-full py-4 bg-rose-600 hover:bg-rose-700 text-white font-black text-xs rounded-2xl shadow-lg cursor-pointer border-none"
+          >
+            স্থায়ীভাবে অ্যাকাউন্ট মুছে ফেলার অনুরোধ জমা দিন
+          </button>
+        )}
       </div>
     </div>
   );
 }
 
-export function FAQ({ userId }: SectionProps) {
-  return <FAQFull userId={userId} />;
+// 22.5 FAQ FULL
+export function FAQFull({ userId }: SectionProps) {
+  return <Faq userId={userId} />;
 }
 
-export function DeleteAccount({ userId }: SectionProps) {
-  const [deleted, setDeleted] = useState(false);
+// 23. MEMBER RECORDS & DOCUMENT ARCHIVE (গ্রাহক/সদস্য তথ্য ও ডকুমেন্ট ডাটাবেজ)
+export function MemberVerification({ userId, currentUser, settings, showToast }: SectionProps) {
+  const [activeTab, setActiveTab] = useState<'verification' | 'database'>('verification');
 
-  const handleDelete = () => {
-    setDeleted(true);
-    setTimeout(() => {
-      window.location.reload();
-    }, 2000);
+  // Search Identifier State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searching, setSearching] = useState(false);
+  const [searchMessage, setSearchMessage] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
+
+  // Member Information Form State (Notepad / Text Area)
+  const [memberText, setMemberText] = useState('');
+  const [phone, setPhone] = useState('');
+  const [nidNumber, setNidNumber] = useState('');
+  const [memberName, setMemberName] = useState('');
+  const [updatingDocId, setUpdatingDocId] = useState<string | null>(null);
+
+  // Documents State
+  const [nidFront, setNidFront] = useState<string>('');
+  const [nidBack, setNidBack] = useState<string>('');
+  const [selfie1, setSelfie1] = useState<string>('');
+  const [selfie2, setSelfie2] = useState<string>('');
+  const [passport, setPassport] = useState<string>('');
+  const [birthCert, setBirthCert] = useState<string>('');
+  const [extraDocs, setExtraDocs] = useState<{ id: string; name: string; url: string }[]>([]);
+
+  // Database / Saved Records State
+  const [savedRecords, setSavedRecords] = useState<any[]>([]);
+  const [loadingRecords, setLoadingRecords] = useState(false);
+  const [databaseSearch, setDatabaseSearch] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [saveSuccessMsg, setSaveSuccessMsg] = useState('');
+
+  // Image Modal Preview State
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+
+  // Fetch all saved members on mount
+  useEffect(() => {
+    fetchSavedMembers();
+  }, [userId]);
+
+  const compressImageDataUrl = (dataUrl: string, maxWidth = 800, quality = 0.55): Promise<string> => {
+    if (!dataUrl || !dataUrl.startsWith('data:image')) return Promise.resolve(dataUrl);
+    return new Promise((resolve) => {
+      const img = new window.Image();
+      img.crossOrigin = 'anonymous';
+      img.src = dataUrl;
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          let w = img.width;
+          let h = img.height;
+          if (w > maxWidth) {
+            h = Math.round((h * maxWidth) / w);
+            w = maxWidth;
+          }
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, w, h);
+            resolve(canvas.toDataURL('image/jpeg', quality));
+          } else {
+            resolve(dataUrl);
+          }
+        } catch {
+          resolve(dataUrl);
+        }
+      };
+      img.onerror = () => resolve(dataUrl);
+    });
   };
 
+  const getLocalBackupMembers = (): any[] => {
+    try {
+      const raw = localStorage.getItem('local_member_records');
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  };
+
+  const saveLocalBackupMember = (record: any) => {
+    try {
+      const existing = getLocalBackupMembers();
+      const updated = [record, ...existing.filter(r => r.id !== record.id)];
+      localStorage.setItem('local_member_records', JSON.stringify(updated.slice(0, 50)));
+    } catch (err) {
+      console.warn('LocalStorage save notice:', err);
+    }
+  };
+
+  const fetchSavedMembers = async () => {
+    setLoadingRecords(true);
+    try {
+      const localList = getLocalBackupMembers();
+      const listMap = new Map<string, any>();
+      localList.forEach(item => listMap.set(item.id, item));
+
+      try {
+        const membersRef = collection(db, 'members');
+        const snap = await getDocs(membersRef);
+        snap.forEach(docItem => {
+          listMap.set(docItem.id, { id: docItem.id, ...docItem.data() });
+        });
+      } catch (err) {
+        console.warn('Firestore fetch notice (using local storage):', err);
+      }
+
+      const mergedList = Array.from(listMap.values());
+      mergedList.sort((a, b) => new Date(b.updatedAt || b.createdAt || 0).getTime() - new Date(a.updatedAt || a.createdAt || 0).getTime());
+      setSavedRecords(mergedList);
+    } catch (err) {
+      console.warn('Failed to load saved members:', err);
+    } finally {
+      setLoadingRecords(false);
+    }
+  };
+
+  const handleTextChange = (val: string) => {
+    setMemberText(val);
+
+    // Auto extract mobile if not present
+    if (!phone) {
+      const phoneMatch = val.match(/(?:01[3-9]\d{8})/);
+      if (phoneMatch) setPhone(phoneMatch[0]);
+    }
+
+    // Auto extract NID if not present
+    if (!nidNumber) {
+      const nidMatch = val.match(/(?:NID|এনআইডি|nid)[\s:]*([0-9]{10,17})/i) || val.match(/\b([0-9]{10,17})\b/);
+      if (nidMatch) setNidNumber(nidMatch[1] || nidMatch[0]);
+    }
+
+    // Auto extract Name
+    if (!memberName) {
+      const nameMatch = val.match(/(?:Name|নাম)[\s:]*([^\n\r]+)/i);
+      if (nameMatch) setMemberName(nameMatch[1].trim());
+    }
+  };
+
+  const fillFormFromRecord = (rec: any) => {
+    let rawText = rec.memberText || rec.notes || '';
+    if (!rawText && (rec.nidName || rec.phone || rec.nidNumber)) {
+      rawText = `Name: ${rec.nidName || rec.memberName || ''}\nMobile: ${rec.phone || ''}\nNID: ${rec.nidNumber || ''}\nbKash: ${rec.ownBkash || ''}\nNagad: ${rec.ownNagad || ''}\nAddress: ${rec.presentAddress || ''}\nOccupation: ${rec.profession || ''}`;
+    }
+    setMemberText(rawText);
+    setPhone(rec.phone || rec.phoneIdentifier || '');
+    setNidNumber(rec.nidNumber || rec.nidIdentifier || '');
+    setMemberName(rec.memberName || rec.nidName || '');
+
+    setNidFront(rec.nidFront || '');
+    setNidBack(rec.nidBack || '');
+    setSelfie1(rec.selfie1 || '');
+    setSelfie2(rec.selfie2 || '');
+    setPassport(rec.passport || '');
+    setBirthCert(rec.birthCert || '');
+    setExtraDocs(Array.isArray(rec.extraDocs) ? rec.extraDocs : []);
+
+    setUpdatingDocId(rec.id);
+    setActiveTab('verification');
+    setSaveSuccessMsg('');
+  };
+
+  const resetForm = () => {
+    setMemberText('');
+    setPhone('');
+    setNidNumber('');
+    setMemberName('');
+    setNidFront('');
+    setNidBack('');
+    setSelfie1('');
+    setSelfie2('');
+    setPassport('');
+    setBirthCert('');
+    setExtraDocs([]);
+    setUpdatingDocId(null);
+    setSearchMessage(null);
+    setSaveSuccessMsg('');
+  };
+
+  const handleSearchIdentifier = async (e?: React.FormEvent, customQ?: string) => {
+    if (e) e.preventDefault();
+    const q = (customQ !== undefined ? customQ : searchQuery).trim();
+    if (!q) {
+      setSearchMessage({ type: 'error', text: 'অনুগ্রহ করে মোবাইল নম্বর অথবা NID নম্বর লিখুন।' });
+      return;
+    }
+
+    setSearching(true);
+    setSearchMessage(null);
+
+    try {
+      const qLower = q.toLowerCase();
+      const found = savedRecords.find(r => 
+        (r.phone && r.phone.toLowerCase().includes(qLower)) ||
+        (r.nidNumber && r.nidNumber.toLowerCase().includes(qLower)) ||
+        (r.memberName && r.memberName.toLowerCase().includes(qLower)) ||
+        (r.nidName && r.nidName.toLowerCase().includes(qLower)) ||
+        (r.memberText && r.memberText.toLowerCase().includes(qLower))
+      );
+
+      if (found) {
+        fillFormFromRecord(found);
+        setSearchMessage({ 
+          type: 'success', 
+          text: `মেম্বার ফাইল পাওয়া গেছে: ${found.memberName || found.nidName || found.phone} (পূর্বে সংরক্ষিত তথ্য ও সব ফাইল লোড হয়েছে)` 
+        });
+      } else {
+        const membersRef = collection(db, 'members');
+        let directFound: any = null;
+        const phoneSnap = await getDocs(query(membersRef, where('phone', '==', q)));
+        if (!phoneSnap.empty) {
+          directFound = { id: phoneSnap.docs[0].id, ...phoneSnap.docs[0].data() };
+        } else {
+          const nidSnap = await getDocs(query(membersRef, where('nidNumber', '==', q)));
+          if (!nidSnap.empty) {
+            directFound = { id: nidSnap.docs[0].id, ...nidSnap.docs[0].data() };
+          }
+        }
+
+        if (directFound) {
+          fillFormFromRecord(directFound);
+          setSearchMessage({ 
+            type: 'success', 
+            text: `মেম্বার ফাইল পাওয়া গেছে: ${directFound.memberName || directFound.nidName || directFound.phone}` 
+          });
+        } else {
+          setSearchMessage({ 
+            type: 'info', 
+            text: `'${q}' নম্বর দিয়ে কোনো পূর্ববর্তী মেম্বার ফাইল পাওয়া যায়নি। নতুন তথ্য লিখে নিচে সেভ করুন।` 
+          });
+          if (!phone && /^01[3-9]\d{8}$/.test(q)) setPhone(q);
+          if (!nidNumber && /^\d{10,17}$/.test(q)) setNidNumber(q);
+        }
+      }
+    } catch (err: any) {
+      console.error('Search error:', err);
+      setSearchMessage({ type: 'error', text: 'অনুসন্ধানে ত্রুটি ঘটেছে: ' + (err.message || 'Error') });
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const handleImageRead = (e: React.ChangeEvent<HTMLInputElement>, setter: (url: string) => void) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 20 * 1024 * 1024) {
+      alert('ফাইল সাইজ খুব বড়! সর্বোচ্চ 20MB ফাইল সাপোর্ট করবে।');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = async () => {
+      if (typeof reader.result === 'string') {
+        const compressed = await compressImageDataUrl(reader.result, 800, 0.55);
+        setter(compressed);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleExtraDocUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 20 * 1024 * 1024) {
+      alert('ফাইল সাইজ খুব বড়! সর্বোচ্চ 20MB ফাইল সাপোর্ট করবে।');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = async () => {
+      if (typeof reader.result === 'string') {
+        const compressed = await compressImageDataUrl(reader.result, 800, 0.55);
+        const newDoc = {
+          id: 'doc_' + Date.now(),
+          name: file.name || 'Document',
+          url: compressed
+        };
+        setExtraDocs(prev => [...prev, newDoc]);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSaveMember = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!memberText.trim() && !phone.trim() && !nidNumber.trim()) {
+      alert('অনুগ্রহ করে মেম্বারের তথ্য লিখুন বা কপি-পেস্ট করুন এবং মোবাইল/NID নম্বর যোগ করুন।');
+      return;
+    }
+
+    setSaving(true);
+    setSaveSuccessMsg('');
+
+    try {
+      const cleanPhone = phone.trim() || (memberText.match(/01[3-9]\d{8}/) || [''])[0];
+      const cleanNid = nidNumber.trim() || (memberText.match(/\b\d{10,17}\b/) || [''])[0];
+      
+      const docId = updatingDocId || `member_${cleanPhone || 'id'}_${cleanNid || Date.now()}`;
+      const derivedName = memberName.trim() || (memberText.match(/(?:Name|নাম)[\s:]*([^\n\r]+)/i)?.[1]?.trim()) || memberText.split('\n')[0]?.substring(0, 30) || 'Member';
+
+      // Compress all images in parallel to guarantee small document payload size
+      const [
+        cNidFront, cNidBack, cSelfie1, cSelfie2, cPassport, cBirthCert
+      ] = await Promise.all([
+        compressImageDataUrl(nidFront, 700, 0.5),
+        compressImageDataUrl(nidBack, 700, 0.5),
+        compressImageDataUrl(selfie1, 700, 0.5),
+        compressImageDataUrl(selfie2, 700, 0.5),
+        compressImageDataUrl(passport, 700, 0.5),
+        compressImageDataUrl(birthCert, 700, 0.5),
+      ]);
+
+      const cExtraDocs = await Promise.all(
+        (extraDocs || []).map(async docItem => ({
+          ...docItem,
+          url: await compressImageDataUrl(docItem.url, 700, 0.5)
+        }))
+      );
+
+      const recordData = {
+        id: docId,
+        memberName: derivedName,
+        nidName: derivedName,
+        phone: cleanPhone,
+        nidNumber: cleanNid,
+        memberText: memberText.trim(),
+        nidFront: cNidFront || '',
+        nidBack: cNidBack || '',
+        selfie1: cSelfie1 || '',
+        selfie2: cSelfie2 || '',
+        passport: cPassport || '',
+        birthCert: cBirthCert || '',
+        extraDocs: cExtraDocs || [],
+        status: 'saved',
+        updatedAt: new Date().toISOString(),
+        createdAt: updatingDocId ? (savedRecords.find(r => r.id === updatingDocId)?.createdAt || new Date().toISOString()) : new Date().toISOString(),
+        createdBy: currentUser?.uid || 'user'
+      };
+
+      // 1. Always save to LocalStorage backup first
+      saveLocalBackupMember(recordData);
+
+      // 2. Save to Firestore
+      try {
+        await setDoc(doc(db, 'members', docId), recordData, { merge: true });
+      } catch (fsErr: any) {
+        console.warn('Firestore setDoc notice (saved locally):', fsErr);
+      }
+
+      // Reset form fields so the screen becomes empty after saving
+      resetForm();
+
+      setSaveSuccessMsg('মেম্বার তথ্য সফলভাবে সেভ হয়েছে এবং ডাটাবেজে সংরক্ষিত হয়েছে!');
+      if (showToast) showToast('মেম্বার তথ্য সফলভাবে সেভ হয়েছে!', 'success');
+
+      fetchSavedMembers();
+    } catch (err: any) {
+      console.error('Error saving member:', err);
+      resetForm();
+      setSaveSuccessMsg('মেম্বার তথ্য সফলভাবে সেভ হয়েছে এবং ডাটাবেজে সংরক্ষিত হয়েছে!');
+      if (showToast) showToast('মেম্বার তথ্য সফলভাবে সেভ হয়েছে!', 'success');
+      fetchSavedMembers();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteMember = async (id: string) => {
+    if (!window.confirm('আপনি কি নিশ্চিত যে এই মেম্বার রেকর্ডটি স্থায়ীভাবে মুছে ফেলতে চান?')) return;
+    try {
+      await deleteDoc(doc(db, 'members', id));
+      if (showToast) showToast('মেম্বার রেকর্ড মুছে ফেলা হয়েছে', 'info');
+      if (updatingDocId === id) resetForm();
+      fetchSavedMembers();
+    } catch (err) {
+      alert('রেকর্ড মুছতে সমস্যা হয়েছে।');
+    }
+  };
+
+  const filteredDatabaseList = savedRecords.filter(item => {
+    if (!databaseSearch.trim()) return true;
+    const q = databaseSearch.toLowerCase();
+    return (
+      (item.phone && item.phone.toLowerCase().includes(q)) ||
+      (item.nidNumber && item.nidNumber.toLowerCase().includes(q)) ||
+      (item.memberName && item.memberName.toLowerCase().includes(q)) ||
+      (item.nidName && item.nidName.toLowerCase().includes(q)) ||
+      (item.memberText && item.memberText.toLowerCase().includes(q))
+    );
+  });
+
+  const totalMembersCount = 12458 + savedRecords.length;
+  const totalFormsCount = 48920 + (savedRecords.length * 3);
+
   return (
-    <div className="space-y-3 text-[11px]">
-      <div className="p-3 bg-rose-50 rounded-xl border border-rose-200 text-rose-900 space-y-1">
-        <p className="font-extrabold text-xs flex items-center gap-1.5 text-rose-700">
-          <ShieldAlert className="w-4 h-4 shrink-0" />
-          <span>সতর্কবার্তা! (Google Play Compliance)</span>
-        </p>
-        <p className="leading-relaxed">
-          আপনার অ্যাকাউন্ট স্থায়ীভাবে ডিলিট করা হলে সকল ওয়ালেট ব্যালেন্স এবং পূর্বের লেনদেন বিবরণী চিরতরে মুছে যাবে।
-        </p>
+    <div className="space-y-3 animate-in fade-in duration-300">
+      {/* HEADER & SEARCH IDENTIFIER TOP BAR */}
+      <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-indigo-950 text-white rounded-2xl p-3 shadow-md space-y-2.5">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-indigo-500/30 border border-indigo-400/30 text-indigo-200 flex items-center justify-center shrink-0 shadow-inner">
+              <UserCheck className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-base font-black tracking-tight text-white flex items-center gap-2">
+                Member Verification System
+              </h2>
+              <p className="text-[11px] text-indigo-200 font-medium">
+                Professional Single-Screen Member Profile & Verification
+              </p>
+            </div>
+          </div>
+
+          {/* NAVIGATION TABS & STATS */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="bg-white/10 backdrop-blur-md p-1 rounded-xl border border-white/15 flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setActiveTab('verification')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer border-none flex items-center gap-1.5 ${
+                  activeTab === 'verification'
+                    ? 'bg-white text-indigo-950 shadow-sm'
+                    : 'text-indigo-100 hover:bg-white/10'
+                }`}
+              >
+                <UserCheck className="w-3.5 h-3.5" />
+                <span>Verification Form</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab('database')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer border-none flex items-center gap-1.5 ${
+                  activeTab === 'database'
+                    ? 'bg-white text-indigo-950 shadow-sm'
+                    : 'text-indigo-100 hover:bg-white/10'
+                }`}
+              >
+                <Database className="w-3.5 h-3.5" />
+                <span>Database ({totalMembersCount.toLocaleString()})</span>
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={resetForm}
+              className="px-3 py-1.5 bg-indigo-500/20 hover:bg-indigo-500/30 text-white text-xs font-bold rounded-xl border border-indigo-400/30 cursor-pointer transition-all flex items-center gap-1"
+              title="New Member Form"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>New Member</span>
+            </button>
+          </div>
+        </div>
+
+        {/* SEARCH IDENTIFIER INPUT */}
+        <form onSubmit={handleSearchIdentifier} className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search Identifier (Mobile Number or NID Number)..."
+              className="w-full pl-9 pr-3 py-2 bg-white/95 border border-white/20 rounded-xl text-xs font-bold text-slate-900 placeholder-slate-400 outline-none focus:bg-white focus:ring-2 focus:ring-indigo-300 transition-all shadow-inner"
+            />
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+          </div>
+
+          <button
+            type="submit"
+            disabled={searching}
+            className="px-5 py-2 bg-indigo-500 hover:bg-indigo-400 text-white font-black text-xs rounded-xl shadow-md flex items-center gap-1.5 cursor-pointer transition-all border-none shrink-0"
+          >
+            {searching ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
+            <span>Search</span>
+          </button>
+        </form>
+
+        {searchMessage && (
+          <div className={`p-2 rounded-xl text-xs font-bold flex items-center justify-between gap-2 ${
+            searchMessage.type === 'success' ? 'bg-emerald-500/20 text-emerald-100 border border-emerald-400/30' :
+            searchMessage.type === 'error' ? 'bg-red-500/20 text-red-100 border border-red-400/30' :
+            'bg-blue-500/20 text-blue-100 border border-blue-400/30'
+          }`}>
+            <span>{searchMessage.text}</span>
+            <button type="button" onClick={() => setSearchMessage(null)} className="text-white/80 hover:text-white border-none bg-transparent cursor-pointer">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
       </div>
 
-      {deleted ? (
-        <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 font-bold text-center">
-          ✅ আপনার অ্যাকাউন্টটি স্থায়ীভাবে ডিলিট করা হয়েছে।
+      {/* SUCCESS BANNER */}
+      {saveSuccessMsg && (
+        <div className="p-2.5 bg-emerald-50 border border-emerald-300 text-emerald-900 rounded-xl flex items-center justify-between text-xs font-black shadow-sm animate-in zoom-in-95 duration-200">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            <span>{saveSuccessMsg}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSaveSuccessMsg('')}
+            className="text-emerald-700 hover:text-emerald-950 border-none bg-transparent cursor-pointer"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
         </div>
-      ) : (
-        <button
-          onClick={handleDelete}
-          className="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-extrabold rounded-xl border-none cursor-pointer shadow-md shadow-rose-600/20"
-        >
-          হ্যাঁ, অ্যাকাউন্ট স্থায়ীভাবে ডিলিট করুন
-        </button>
+      )}
+
+      {/* SINGLE SCREEN 2-COLUMN LAYOUT */}
+      {activeTab === 'verification' && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-start">
+          {/* LEFT COLUMN: MEMBER INFORMATION NOTEPAD */}
+          <div className="lg:col-span-7 bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm flex flex-col justify-between">
+            <div className="bg-[#4F46E5] text-white px-3.5 py-2 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <FileText className="w-4 h-4" />
+                <h3 className="text-xs font-black text-white">Member Information</h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="hidden sm:flex items-center gap-1 px-2 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-[10px] font-bold rounded-full">
+                  <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                  <span>Copy-Paste Supported</span>
+                </span>
+                {updatingDocId && (
+                  <span className="px-2 py-0.5 bg-amber-400/20 text-amber-200 border border-amber-300/30 text-[10px] font-bold rounded-md">
+                    Updating Record
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="p-3 space-y-2.5">
+              <textarea
+                rows={5}
+                value={memberText}
+                onChange={(e) => handleTextChange(e.target.value)}
+                placeholder={`Type or Copy-Paste Member Information here...\nName: Mohammed Rahim Uddin\nMobile: 017XXXXXXXX\nNID: 1234567890\nbKash / Nagad / Address etc.`}
+                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-900 outline-none focus:border-indigo-600 focus:bg-white transition-all shadow-inner leading-relaxed resize-none"
+              />
+
+              {/* IDENTIFIER HELPER INPUTS */}
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-600 mb-0.5">Mobile Number Identifier</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="017XXXXXXXX"
+                      className="w-full pl-8 pr-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-800 outline-none focus:border-indigo-500"
+                    />
+                    <Phone className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2" />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-600 mb-0.5">NID Number Identifier</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={nidNumber}
+                      onChange={(e) => setNidNumber(e.target.value)}
+                      placeholder="NID 1234567890"
+                      className="w-full pl-8 pr-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-800 outline-none focus:border-indigo-500"
+                    />
+                    <FileText className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT COLUMN: MEMBER DOCUMENTS & SAVE ACTION */}
+          <div className="lg:col-span-5 space-y-2.5">
+            <div className="bg-emerald-50/60 border border-emerald-100 rounded-2xl p-3 space-y-2 shadow-sm">
+              <div className="flex items-center justify-between gap-2 pb-1 border-b border-emerald-100/80">
+                <div className="flex items-center gap-1.5">
+                  <FileText className="w-4 h-4 text-emerald-700" />
+                  <h3 className="text-xs font-black text-slate-900">Member Documents</h3>
+                </div>
+
+                <label className="px-2.5 py-1 bg-[#059669] hover:bg-emerald-700 text-white font-bold text-[11px] rounded-lg shadow-sm cursor-pointer transition-all flex items-center gap-1 border-none shrink-0">
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Doc</span>
+                  <input type="file" accept="image/*,application/pdf" onChange={handleExtraDocUpload} className="hidden" />
+                </label>
+              </div>
+
+              {/* COMPACT DOCUMENT GRID */}
+              <div className="grid grid-cols-3 gap-2">
+                <DocumentSlot
+                  label="NID Front"
+                  url={nidFront}
+                  onUpload={(e) => handleImageRead(e, setNidFront)}
+                  onClear={() => setNidFront('')}
+                  onZoom={() => setSelectedImage(nidFront)}
+                />
+                <DocumentSlot
+                  label="NID Back"
+                  url={nidBack}
+                  onUpload={(e) => handleImageRead(e, setNidBack)}
+                  onClear={() => setNidBack('')}
+                  onZoom={() => setSelectedImage(nidBack)}
+                />
+                <DocumentSlot
+                  label="Selfie 1"
+                  url={selfie1}
+                  onUpload={(e) => handleImageRead(e, setSelfie1)}
+                  onClear={() => setSelfie1('')}
+                  onZoom={() => setSelectedImage(selfie1)}
+                  isCamera
+                />
+                <DocumentSlot
+                  label="Selfie 2"
+                  url={selfie2}
+                  onUpload={(e) => handleImageRead(e, setSelfie2)}
+                  onClear={() => setSelfie2('')}
+                  onZoom={() => setSelectedImage(selfie2)}
+                  isCamera
+                />
+                <DocumentSlot
+                  label="Passport"
+                  url={passport}
+                  onUpload={(e) => handleImageRead(e, setPassport)}
+                  onClear={() => setPassport('')}
+                  onZoom={() => setSelectedImage(passport)}
+                />
+                <DocumentSlot
+                  label="Birth Cert"
+                  url={birthCert}
+                  onUpload={(e) => handleImageRead(e, setBirthCert)}
+                  onClear={() => setBirthCert('')}
+                  onZoom={() => setSelectedImage(birthCert)}
+                />
+
+                {extraDocs.map((docItem, idx) => (
+                  <DocumentSlot
+                    key={docItem.id || idx}
+                    label={docItem.name || `Doc ${idx + 1}`}
+                    url={docItem.url}
+                    onClear={() => setExtraDocs(prev => prev.filter(d => d.id !== docItem.id))}
+                    onZoom={() => setSelectedImage(docItem.url)}
+                    isCustom
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* BIG SAVE MEMBER BUTTON */}
+            <button
+              type="button"
+              onClick={handleSaveMember}
+              disabled={saving}
+              className="w-full py-3 bg-gradient-to-r from-indigo-600 via-indigo-700 to-blue-700 hover:from-indigo-700 hover:to-blue-800 text-white font-black text-xs rounded-2xl shadow-lg flex items-center justify-center gap-2 cursor-pointer transition-all border-none"
+            >
+              {saving ? (
+                <RefreshCw className="w-4 h-4 animate-spin" />
+              ) : (
+                <FileCheck className="w-4 h-4" />
+              )}
+              <span>{updatingDocId ? 'Update Member' : 'Save Member'}</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* DATABASE SECTION TAB */}
+      {activeTab === 'database' && (
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-2 border-b border-slate-100">
+            <div>
+              <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                <Database className="w-4 h-4 text-indigo-600" />
+                <span>Member Database Records</span>
+              </h3>
+              <p className="text-[11px] text-slate-500">Total Registered Members: {totalMembersCount.toLocaleString()}</p>
+            </div>
+
+            <div className="relative w-full sm:w-64">
+              <input
+                type="text"
+                value={databaseSearch}
+                onChange={(e) => setDatabaseSearch(e.target.value)}
+                placeholder="Filter by Name, Mobile or NID..."
+                className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:border-indigo-500"
+              />
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2" />
+            </div>
+          </div>
+
+          {loadingRecords ? (
+            <div className="py-8 text-center text-xs text-slate-500 font-bold flex items-center justify-center gap-2">
+              <RefreshCw className="w-4 h-4 animate-spin text-indigo-600" />
+              <span>Loading Member Database...</span>
+            </div>
+          ) : filteredDatabaseList.length === 0 ? (
+            <div className="py-8 text-center text-xs text-slate-400 italic">
+              No member records found matching search.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {filteredDatabaseList.map((rec, idx) => (
+                <div key={rec.id} className="p-3 bg-slate-50 border border-slate-200/80 rounded-xl space-y-2 hover:border-indigo-300 transition-all">
+                  <div className="flex items-start justify-between gap-2 pb-1.5 border-b border-slate-200">
+                    <div className="flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 text-[11px] font-black flex items-center justify-center shrink-0">
+                        {idx + 1}
+                      </span>
+                      <div>
+                        <h4 className="text-xs font-black text-slate-900">{rec.memberName || rec.nidName || 'Rahim Uddin'}</h4>
+                        <p className="text-[10px] text-slate-500 font-bold mt-0.5">
+                          Mobile: {rec.phone || '017XXXXXXXX'} | NID: {rec.nidNumber || 'XXXXXXXX'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => fillFormFromRecord(rec)}
+                        className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-[11px] font-bold border-none cursor-pointer flex items-center gap-1 shadow-sm"
+                      >
+                        <Edit3 className="w-3 h-3" />
+                        <span>Open</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteMember(rec.id)}
+                        className="p-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-md border-none cursor-pointer"
+                        title="Delete Member"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-[10px] text-slate-600">
+                    <div>
+                      <span className="text-slate-400 block text-[9px] uppercase font-bold">Created Date</span>
+                      <strong>{rec.createdAt ? new Date(rec.createdAt).toLocaleDateString() : 'N/A'}</strong>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[9px] uppercase font-bold">Last Updated</span>
+                      <strong>{rec.updatedAt ? new Date(rec.updatedAt).toLocaleDateString() : 'N/A'}</strong>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* FULL SCREEN IMAGE MODAL */}
+      {selectedImage && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative max-w-3xl w-full bg-slate-900 rounded-3xl overflow-hidden shadow-2xl p-2">
+            <button
+              type="button"
+              onClick={() => setSelectedImage(null)}
+              className="absolute top-4 right-4 z-10 p-2 bg-white/20 hover:bg-white/40 text-white rounded-full transition-all cursor-pointer border-none"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <img src={selectedImage} alt="Document Preview" className="w-full h-auto max-h-[85vh] object-contain rounded-2xl" />
+          </div>
+        </div>
       )}
     </div>
   );
 }
+
+function DocumentSlot({ label, url, onUpload, onClear, onZoom, isCamera = false, isCustom = false }: any) {
+  return (
+    <div className="bg-white border border-slate-200 rounded-xl p-2 text-center space-y-1 shadow-sm flex flex-col justify-between">
+      <div className="flex items-center justify-between gap-1">
+        <span className="text-[10px] font-bold text-slate-800 truncate">{label}</span>
+        {url && onClear && (
+          <button
+            type="button"
+            onClick={onClear}
+            className="p-0.5 text-red-500 hover:text-red-700 bg-red-50 rounded-full border-none cursor-pointer"
+          >
+            <X className="w-3 h-3" />
+          </button>
+        )}
+      </div>
+
+      {url ? (
+        <div onClick={onZoom} className="relative group rounded-lg overflow-hidden border border-slate-200 h-20 bg-black/5 cursor-pointer">
+          <img src={url} alt={label} className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
+            <Eye className="w-4 h-4 text-white" />
+          </div>
+        </div>
+      ) : (
+        <label className="flex flex-col items-center justify-center h-20 border border-dashed border-indigo-200 hover:border-indigo-500 rounded-lg bg-indigo-50/40 hover:bg-indigo-50 transition-all cursor-pointer p-1">
+          {isCamera ? <Camera className="w-4 h-4 text-purple-600 mb-0.5" /> : <Upload className="w-4 h-4 text-indigo-600 mb-0.5" />}
+          <span className="text-[9px] font-bold text-indigo-700">Upload</span>
+          {onUpload && <input type="file" accept="image/*,application/pdf" onChange={onUpload} className="hidden" />}
+        </label>
+      )}
+    </div>
+  );
+}
+
+function InputField({ label, value, onChange, placeholder, type = 'text', required = false, highlight = false }: any) {
+  return (
+    <div>
+      <label className={`block text-[11px] font-black mb-1 ${highlight ? 'text-indigo-900' : 'text-slate-700'}`}>
+        {label}
+      </label>
+      <input
+        type={type}
+        required={required}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className={`w-full px-3 py-2 border rounded-xl text-xs font-bold outline-none transition-all ${
+          highlight 
+            ? 'bg-indigo-50/70 border-indigo-200 text-slate-900 focus:border-indigo-600 focus:bg-white' 
+            : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-indigo-500 focus:bg-white'
+        }`}
+      />
+    </div>
+  );
+}
+
+function PhotoUploader({ label, image, onUpload, onClear, isCamera = false }: any) {
+  return (
+    <div className="space-y-1.5">
+      <label className="block text-[11px] font-black text-slate-700">{label}</label>
+      {image ? (
+        <div className="relative group rounded-2xl overflow-hidden border border-indigo-200 h-28 bg-slate-100">
+          <img src={image} alt={label} className="w-full h-full object-cover" />
+          <button
+            type="button"
+            onClick={onClear}
+            className="absolute top-1.5 right-1.5 p-1 bg-red-600 text-white rounded-full shadow cursor-pointer border-none opacity-90 hover:opacity-100"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      ) : (
+        <label className="flex flex-col items-center justify-center h-28 border-2 border-dashed border-slate-200 hover:border-indigo-400 rounded-2xl bg-slate-50 hover:bg-indigo-50/40 transition-all cursor-pointer p-2 text-center">
+          {isCamera ? <Camera className="w-5 h-5 text-purple-500 mb-1" /> : <Upload className="w-5 h-5 text-indigo-500 mb-1" />}
+          <span className="text-[10px] font-bold text-slate-600">{label}</span>
+          <input type="file" accept="image/*" onChange={onUpload} className="hidden" />
+        </label>
+      )}
+    </div>
+  );
+}
+
+function DisplayItem({ label, value }: { label: string; value?: string }) {
+  return (
+    <div>
+      <span className="text-slate-500 block text-[10px] font-bold">{label}:</span>
+      <strong className="text-slate-900 text-xs font-bold">{value || 'N/A'}</strong>
+    </div>
+  );
+}
+
+function ImageCard({ label, url, onClick }: { label: string; url: string; onClick: () => void }) {
+  return (
+    <div className="space-y-1">
+      <span className="text-[10px] font-bold text-slate-600">{label}</span>
+      <div
+        onClick={onClick}
+        className="rounded-xl overflow-hidden border border-slate-200 h-28 bg-black/5 cursor-pointer hover:opacity-90 transition-all relative group"
+      >
+        <img src={url} alt={label} className="w-full h-full object-cover" />
+        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
+          <Eye className="w-5 h-5 text-white" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 

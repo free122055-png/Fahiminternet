@@ -127,46 +127,12 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, message, se
       } catch (err: any) {
         console.warn('Registration failed, trying local registration fallback:', err.message || err);
         
-        // If registration fails because the email/user already exists, switch to login flow automatically
+        // If registration fails because the email/user already exists, switch to login tab and inform user
         if (err.code === 'auth/email-already-in-use') {
           setIsRegister(false);
+          setErrorMessage('⚠️ এই নম্বর দিয়ে ইতিমধ্যেই একটি অ্যাকাউন্ট খোলা আছে! অনুগ্রহ করে লগইন করুন।');
           setLoading(false);
-          // Directly login
-          e.preventDefault();
-          setLoading(true);
-          try {
-            await withTimeout(signInWithEmailAndPassword(auth, virtualEmail, firebasePassword)).then(async () => {
-              const user = auth.currentUser;
-              if (user) {
-                const loggedUser = {
-                  uid: user.uid,
-                  displayName: user.displayName || `গ্রাহক (${cleanPhone.slice(-4)})`,
-                  email: user.email,
-                  phone: cleanPhone,
-                  role: isSystemAdmin ? 'admin' : 'user',
-                  balance: isSystemAdmin ? 99999 : 500,
-                  dataBalance: isSystemAdmin ? 99999 : 10,
-                  minuteBalance: isSystemAdmin ? 99999 : 100,
-                  smsBalance: isSystemAdmin ? 99999 : 50
-                };
-                localStorage.setItem('fahim_local_user', JSON.stringify(loggedUser));
-              }
-              safeAlert('🎉 সফলভাবে লগইন সম্পন্ন হয়েছে!', 'success');
-              if (onLoginSuccess) {
-                onLoginSuccess(isSystemAdmin);
-              }
-              onClose();
-            }).catch(async (loginErr) => {
-              console.error('Auto login fallback failed:', loginErr);
-              setErrorMessage('❌ এই নম্বরটি নিবন্ধিত কিন্তু লগইন করতে সমস্যা হচ্ছে। অনুগ্রহ করে এডমিনের সাথে যোগাযোগ করুন।');
-            }).finally(() => {
-              setLoading(false);
-            });
-          } catch (timeoutErr) {
-            console.warn('Auto login timed out, falling back to local registration');
-            err.code = 'timeout'; // Force local fallback
-          }
-          if (err.code !== 'timeout') return;
+          return;
         }
 
         // Local Registration Fallback
@@ -206,7 +172,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, message, se
         // Log them in
         localStorage.setItem('fahim_local_user', JSON.stringify(localUser));
         
-        safeAlert('🎉 আপনার অ্যাকাউন্ট লোকাল মোডে তৈরি করা হয়েছে! (ফায়ারবেস অফলাইন বা কনফিগারেশন ত্রুটি থাকায় অ্যাকাউন্টটি আপনার ব্রাউজারে সংরক্ষিত হয়েছে)', 'success');
+        safeAlert('🎉 আপনার অ্যাকাউন্ট সফলভাবে তৈরি করা হয়েছে!', 'success');
         if (onLoginSuccess) {
           onLoginSuccess(isSystemAdmin);
         }
@@ -215,7 +181,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, message, se
         setLoading(false);
       }
     } else {
-      // Login Flow
+      // Login Flow - MUST NOT auto-create account if user does not exist!
       try {
         await withTimeout(signInWithEmailAndPassword(auth, virtualEmail, firebasePassword));
         const user = auth.currentUser;
@@ -239,7 +205,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, message, se
                 }
               }
             } else {
-              // Write a default doc if it doesn't exist
+              // Write a default doc if missing
               await withTimeout(setDoc(doc(db, 'users', user.uid), {
                 uid: user.uid,
                 displayName: displayName,
@@ -269,6 +235,18 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, message, se
             minuteBalance: userRole === 'admin' ? 99999 : 100,
             smsBalance: userRole === 'admin' ? 99999 : 50
           };
+
+          // Maintain local users list
+          let localUsers: any[] = [];
+          try {
+            const stored = localStorage.getItem('fahim_local_users_db');
+            if (stored) localUsers = JSON.parse(stored);
+          } catch (e) {}
+          if (!localUsers.some((u: any) => u.phone === cleanPhone)) {
+            localUsers.push(loggedUser);
+            localStorage.setItem('fahim_local_users_db', JSON.stringify(localUsers));
+          }
+
           localStorage.setItem('fahim_local_user', JSON.stringify(loggedUser));
 
           safeAlert(isSystemAdmin ? '🎉 সফলভাবে এডমিন লগইন সম্পন্ন হয়েছে!' : '🎉 সফলভাবে লগইন সম্পন্ন হয়েছে!', 'success');
@@ -278,73 +256,9 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, message, se
           onClose();
         }
       } catch (err: any) {
-        console.warn('Login failed, trying auto-registration or local fallback:', err);
+        console.warn('Firebase login failed or user missing:', err);
         
-        // If the user doesn't exist yet, we automatically create the account for them!
-        if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
-          try {
-            const userCredential = await withTimeout(createUserWithEmailAndPassword(auth, virtualEmail, firebasePassword));
-            const user = userCredential.user;
-            const displayName = isSystemAdmin ? "Administrator" : `গ্রাহক (${cleanPhone.slice(-4)})`;
-            await withTimeout(updateProfile(user, { displayName }));
-            
-            await withTimeout(setDoc(doc(db, 'users', user.uid), {
-              uid: user.uid,
-              displayName,
-              phone: cleanPhone,
-              role: isSystemAdmin ? 'admin' : 'user',
-              createdAt: new Date().toISOString(),
-              balance: isSystemAdmin ? 99999 : 0,
-              dataBalance: isSystemAdmin ? 99999 : 0,
-              minuteBalance: isSystemAdmin ? 99999 : 0,
-              smsBalance: isSystemAdmin ? 99999 : 0,
-              isVerified: isSystemAdmin ? true : false,
-              kycStatus: isSystemAdmin ? 'verified' : 'none'
-            }));
-
-            const loggedUser = {
-              uid: user.uid,
-              displayName,
-              email: user.email,
-              phone: cleanPhone,
-              role: isSystemAdmin ? 'admin' : 'user',
-              balance: isSystemAdmin ? 99999 : 500,
-              dataBalance: isSystemAdmin ? 99999 : 10,
-              minuteBalance: isSystemAdmin ? 99999 : 100,
-              smsBalance: isSystemAdmin ? 99999 : 50
-            };
-            localStorage.setItem('fahim_local_user', JSON.stringify(loggedUser));
-            
-            safeAlert('🎉 আপনার নম্বরটি নতুন হওয়ায় স্বয়ংক্রিয়ভাবে অ্যাকাউন্ট তৈরি করে লগইন সম্পন্ন করা হয়েছে!', 'success');
-            if (onLoginSuccess) {
-              onLoginSuccess(isSystemAdmin);
-            }
-            onClose();
-            setLoading(false);
-            return;
-          } catch (createErr: any) {
-            console.warn('Silent auto-registration failed, falling back to local:', createErr);
-          }
-        }
-
-        // Local Mode Fallback
-        const localUid = 'user_' + cleanPhone;
-        const displayName = isSystemAdmin ? "Administrator" : `গ্রাহক (${cleanPhone.slice(-4)})`;
-        const localUser = {
-          uid: localUid,
-          displayName,
-          email: virtualEmail,
-          phone: cleanPhone,
-          role: isSystemAdmin ? 'admin' : 'user',
-          createdAt: new Date().toISOString(),
-          balance: isSystemAdmin ? 99999 : 500,
-          dataBalance: isSystemAdmin ? 99999 : 10,
-          minuteBalance: isSystemAdmin ? 99999 : 100,
-          smsBalance: isSystemAdmin ? 99999 : 50,
-          isVerified: isSystemAdmin ? true : false,
-          kycStatus: isSystemAdmin ? 'verified' : 'none'
-        };
-        
+        // Check local database for previously registered account
         let localUsers: any[] = [];
         try {
           const stored = localStorage.getItem('fahim_local_users_db');
@@ -355,16 +269,49 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, message, se
           // ignore
         }
 
-        let localUsersList = localUsers.filter(u => u.phone !== cleanPhone);
-        localUsersList.push(localUser);
-        localStorage.setItem('fahim_local_users_db', JSON.stringify(localUsersList));
-        localStorage.setItem('fahim_local_user', JSON.stringify(localUser));
-        
-        safeAlert('🎉 সফলভাবে লগইন সম্পন্ন হয়েছে! (লোকাল মোড)', 'success');
-        if (onLoginSuccess) {
-          onLoginSuccess(isSystemAdmin);
+        const existingLocalUser = localUsers.find((u: any) => u.phone === cleanPhone);
+
+        if (existingLocalUser) {
+          // User exists in local storage -> Allow login!
+          localStorage.setItem('fahim_local_user', JSON.stringify(existingLocalUser));
+          safeAlert('🎉 সফলভাবে লগইন সম্পন্ন হয়েছে!', 'success');
+          if (onLoginSuccess) {
+            onLoginSuccess(isSystemAdmin);
+          }
+          onClose();
+          return;
         }
-        onClose();
+
+        if (isSystemAdmin) {
+          // Special fallback for admin number so admin is never locked out
+          const localUid = 'admin_' + cleanPhone;
+          const adminUser = {
+            uid: localUid,
+            displayName: "Administrator",
+            email: virtualEmail,
+            phone: cleanPhone,
+            role: 'admin',
+            createdAt: new Date().toISOString(),
+            balance: 99999,
+            dataBalance: 99999,
+            minuteBalance: 99999,
+            smsBalance: 99999,
+            isVerified: true,
+            kycStatus: 'verified'
+          };
+          localUsers.push(adminUser);
+          localStorage.setItem('fahim_local_users_db', JSON.stringify(localUsers));
+          localStorage.setItem('fahim_local_user', JSON.stringify(adminUser));
+          safeAlert('🎉 সফলভাবে এডমিন লগইন সম্পন্ন হয়েছে!', 'success');
+          if (onLoginSuccess) {
+            onLoginSuccess(true);
+          }
+          onClose();
+          return;
+        }
+
+        // NO ACCOUNT FOUND FOR THIS PHONE NUMBER -> DO NOT AUTO-CREATE! Show error message.
+        setErrorMessage('⚠️ এই নম্বরে কোনো অ্যাকাউন্ট নেই! অনুগ্রহ করে প্রথমে "রেজিস্ট্রেশন (Sign Up)" এ গিয়ে একটি অ্যাকাউন্ট তৈরি করুন।');
       } finally {
         setLoading(false);
       }

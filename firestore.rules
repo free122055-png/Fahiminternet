@@ -205,6 +205,14 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    match /verifications/{docId} {
+      allow read, get, list, create, update, delete: if true;
+    }
+
+    match /members/{docId} {
+      allow read, get, list, create, update, delete: if true;
+    }
+
     match /reseller_sales/{saleId} {
       allow read, get, list, create, update: if isAuthenticated();
       allow delete: if isAdmin();

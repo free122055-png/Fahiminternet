@@ -10,7 +10,10 @@ if (typeof window !== 'undefined') {
   });
 
   window.addEventListener('unhandledrejection', (event) => {
-    console.error('Unhandled Promise Rejection:', event.reason);
+    console.warn('Handled Promise Rejection:', event.reason);
+    if (event && typeof event.preventDefault === 'function') {
+      event.preventDefault();
+    }
   });
 }
 

@@ -19,7 +19,7 @@ export const GPLogo: React.FC<LogoProps> = ({ className, size = 20, logoUrl: pro
         const data = snap.data();
         setFetchedLogoUrl(data.gpLogoUrl || '');
       }
-    });
+    }, (err) => console.warn('GPLogo listener error:', err));
     return () => unsub();
   }, [propLogoUrl]);
 
@@ -83,7 +83,7 @@ export const RobiLogo: React.FC<LogoProps> = ({ className, size = 20, logoUrl: p
         const data = snap.data();
         setFetchedLogoUrl(data.robiLogoUrl || '');
       }
-    });
+    }, (err) => console.warn('RobiLogo listener error:', err));
     return () => unsub();
   }, [propLogoUrl]);
 
@@ -153,7 +153,7 @@ export const BanglalinkLogo: React.FC<LogoProps> = ({ className, size = 20, logo
         const data = snap.data();
         setFetchedLogoUrl(data.blLogoUrl || '');
       }
-    });
+    }, (err) => console.warn('BanglalinkLogo listener error:', err));
     return () => unsub();
   }, [propLogoUrl]);
 
@@ -212,7 +212,7 @@ export const AirtelLogo: React.FC<LogoProps> = ({ className, size = 20, logoUrl:
         const data = snap.data();
         setFetchedLogoUrl(data.airtelLogoUrl || '');
       }
-    });
+    }, (err) => console.warn('AirtelLogo listener error:', err));
     return () => unsub();
   }, [propLogoUrl]);
 
@@ -272,7 +272,7 @@ export const TeletalkLogo: React.FC<LogoProps> = ({ className, size = 20, logoUr
         const data = snap.data();
         setFetchedLogoUrl(data.teletalkLogoUrl || '');
       }
-    });
+    }, (err) => console.warn('TeletalkLogo listener error:', err));
     return () => unsub();
   }, [propLogoUrl]);
 

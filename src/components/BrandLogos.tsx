@@ -16,7 +16,7 @@ export function BKashLogo({ className = "h-10 w-auto", customLogoUrl }: LogoProp
         const data = snap.data();
         setFetchedLogoUrl(data.bkashLogoUrl || '');
       }
-    });
+    }, (err) => console.warn('BKashLogo listener error:', err));
     return () => unsub();
   }, []);
 
@@ -59,7 +59,7 @@ export function NagadLogo({ className = "h-10 w-auto", customLogoUrl }: LogoProp
         const data = snap.data();
         setFetchedLogoUrl(data.nagadLogoUrl || '');
       }
-    });
+    }, (err) => console.warn('NagadLogo listener error:', err));
     return () => unsub();
   }, []);
 
@@ -105,7 +105,7 @@ export function RocketLogo({ className = "h-10 w-auto", customLogoUrl }: LogoPro
         const data = snap.data();
         setFetchedLogoUrl(data.rocketLogoUrl || '');
       }
-    });
+    }, (err) => console.warn('RocketLogo listener error:', err));
     return () => unsub();
   }, []);
 
@@ -150,7 +150,7 @@ export function UpayLogo({ className = "h-10 w-auto", customLogoUrl }: LogoProps
         const data = snap.data();
         setFetchedLogoUrl(data.upayLogoUrl || '');
       }
-    });
+    }, (err) => console.warn('UpayLogo listener error:', err));
     return () => unsub();
   }, []);
 
@@ -192,7 +192,7 @@ export function CellfinLogo({ className = "h-10 w-auto", customLogoUrl }: LogoPr
         const data = snap.data();
         setFetchedLogoUrl(data.cellfinLogoUrl || '');
       }
-    });
+    }, (err) => console.warn('CellfinLogo listener error:', err));
     return () => unsub();
   }, []);
 
@@ -237,7 +237,7 @@ export function BankingLogo({ className = "h-10 w-auto", customLogoUrl }: LogoPr
         const data = snap.data();
         setFetchedLogoUrl(data.bankingLogoUrl || '');
       }
-    });
+    }, (err) => console.warn('BankingLogo listener error:', err));
     return () => unsub();
   }, []);
 

@@ -18,7 +18,8 @@ import {
   AddMoney, PaymentHistory, Cashback, SavedCards, 
   SupportTeam, LiveChat, Tickets, Faq, 
   AccountSettings, ChangePassword, SecuritySettings, NotificationSettings,
-  AboutUs, PrivacyPolicy, TermsConditions, ContactUs, DeleteAccount, ReportProblem, FAQFull
+  AboutUs, PrivacyPolicy, TermsConditions, ContactUs, DeleteAccount, ReportProblem, FAQFull,
+  MemberVerification
 } from './ProfileSections';
 
 function formatBnNumber(num: number | string): string {
@@ -107,8 +108,9 @@ export default function SoftwareDashboard({
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [showNotificationModal, setShowNotificationModal] = useState(false);
   const [showMenuDrawer, setShowMenuDrawer] = useState(false);
-  const [activeMenuModal, setActiveMenuModal] = useState<'privacy' | 'terms' | 'contact' | 'about' | 'support' | 'delete_account' | 'report_problem' | 'my_packs' | 'order_history' | 'order_tracking' | 'favorite_offers' | 'add_money' | 'payment_history' | 'cashback' | 'saved_cards' | 'support_team' | 'live_chat' | 'tickets' | 'faq' | 'account_settings' | 'change_password' | 'security' | 'notification_settings' | null>(null);
+  const [activeMenuModal, setActiveMenuModal] = useState<'privacy' | 'terms' | 'contact' | 'about' | 'support' | 'delete_account' | 'report_problem' | 'my_packs' | 'order_history' | 'order_tracking' | 'favorite_offers' | 'add_money' | 'payment_history' | 'cashback' | 'saved_cards' | 'support_team' | 'live_chat' | 'tickets' | 'faq' | 'account_settings' | 'change_password' | 'security' | 'notification_settings' | 'member_verification' | null>(null);
   const [showSearchInput, setShowSearchInput] = useState(false);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [sortBy, setSortBy] = useState<'default' | 'lowest' | 'highest'>('lowest');
   const [favIds, setFavIds] = useState<string[]>([]);
   const [historyFilter, setHistoryFilter] = useState<'all' | 'completed' | 'pending' | 'cancelled'>('all');
@@ -393,6 +395,15 @@ export default function SoftwareDashboard({
       barColor: 'bg-teal-600', 
       action: onOpenTracker, 
       keywords: ['track', 'order', 'ট্র্যাকিং', 'অর্ডার'] 
+    },
+    { 
+      id: 'member_verification',
+      label: '🔐 Member Verification', 
+      icon: Lock, 
+      bgCircle: 'bg-indigo-50 text-indigo-600 border border-indigo-100', 
+      barColor: 'bg-indigo-600', 
+      action: () => setActiveMenuModal('member_verification'), 
+      keywords: ['member', 'verification', 'মেম্বার', 'ভেরিফিকেশন', 'আইডি', 'nid', 'security', '🔐'] 
     },
   ];
 
@@ -1082,30 +1093,30 @@ export default function SoftwareDashboard({
             <div className="flex items-center justify-between gap-2 px-1">
               <div className="flex items-center gap-1.5">
                 <button
-                  onClick={() => {
-                    setSelectedOperator('All');
-                    setSelectedCategory('All');
-                    setSearchQuery('');
-                  }}
+                  type="button"
+                  onClick={() => setShowCategoryModal(true)}
                   className="px-3.5 py-1.5 bg-white border border-slate-200/90 text-slate-700 hover:text-emerald-700 rounded-full text-xs font-extrabold flex items-center gap-1.5 cursor-pointer shadow-2xs transition-colors"
                 >
                   <Filter className="w-3.5 h-3.5 text-emerald-600" />
                   <span>ফিল্টার</span>
                 </button>
 
-                {/* Category Quick Filter */}
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="bg-white border border-slate-200/90 text-slate-700 rounded-full px-3 py-1 text-xs font-extrabold cursor-pointer focus:outline-none"
+                {/* Premium Category Quick Filter Trigger */}
+                <button
+                  type="button"
+                  onClick={() => setShowCategoryModal(true)}
+                  className="bg-white border border-slate-200/90 text-slate-800 hover:border-emerald-500 hover:text-emerald-700 rounded-full px-3.5 py-1.5 text-xs font-black cursor-pointer transition-all flex items-center gap-1.5 shadow-2xs"
                 >
-                  <option value="All">সকল টাইপ</option>
-                  <option value="internet">ইন্টারনেট</option>
-                  <option value="minute">মিনিট</option>
-                  <option value="combo">বান্ডেল</option>
-                  <option value="family">ফ্যামিলি</option>
-                  <option value="gift">মাই প্যাক</option>
-                </select>
+                  <span>
+                    {selectedCategory === 'All' ? 'সকল টাইপ' :
+                     selectedCategory === 'internet' ? 'ইন্টারনেট' :
+                     selectedCategory === 'minute' ? 'মিনিট' :
+                     selectedCategory === 'combo' ? 'বান্ডেল' :
+                     selectedCategory === 'family' ? 'ফ্যামিলি' :
+                     selectedCategory === 'gift' ? 'মাই প্যাক' : 'সকল টাইপ'}
+                  </span>
+                  <ChevronDown className="w-3.5 h-3.5 text-emerald-600" />
+                </button>
               </div>
 
               {/* Sort selector */}
@@ -1805,6 +1816,7 @@ export default function SoftwareDashboard({
                       {activeMenuModal === 'delete_account' && 'Delete Account'}
                       {activeMenuModal === 'support_team' && 'Support Team'}
                       {activeMenuModal === 'report_problem' && 'Report a Problem'}
+                      {activeMenuModal === 'member_verification' && '🔐 Member Verification'}
                     </h3>
                     <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest mt-0.5">
                       {(settings?.brandName || 'FAHIM INTERNET').split(' ')[0]} Official App
@@ -1813,7 +1825,7 @@ export default function SoftwareDashboard({
                 </div>
 
                 <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
-                  {['privacy', 'terms'].includes(activeMenuModal) && <ShieldCheck className="w-5 h-5" />}
+                  {['privacy', 'terms', 'member_verification'].includes(activeMenuModal) && <ShieldCheck className="w-5 h-5" />}
                   {['contact', 'support_team'].includes(activeMenuModal) && <Headphones className="w-5 h-5" />}
                   {['faq', 'support'].includes(activeMenuModal) && <HelpCircle className="w-5 h-5" />}
                   {['add_money', 'payment_history'].includes(activeMenuModal) && <Wallet className="w-5 h-5" />}
@@ -1849,6 +1861,7 @@ export default function SoftwareDashboard({
                   {activeMenuModal === 'contact' && <ContactUs userId={currentUser?.uid} settings={settings} />}
                   {activeMenuModal === 'report_problem' && <ReportProblem userId={currentUser?.uid} settings={settings} />}
                   {activeMenuModal === 'delete_account' && <DeleteAccount userId={currentUser?.uid} currentUser={currentUser} />}
+                  {activeMenuModal === 'member_verification' && <MemberVerification userId={currentUser?.uid} currentUser={currentUser} settings={settings} />}
                 </div>
               </div>
 
@@ -2073,6 +2086,141 @@ export default function SoftwareDashboard({
                 </button>
               </div>
 
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* PREMIUM CATEGORY FILTER BOTTOM SHEET / POPUP */}
+      <AnimatePresence>
+        {showCategoryModal && (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/65 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-200">
+            {/* Backdrop click to close */}
+            <div 
+              className="absolute inset-0" 
+              onClick={() => setShowCategoryModal(false)} 
+            />
+
+            <motion.div
+              initial={{ y: '100%', opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: '100%', opacity: 0 }}
+              transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+              className="relative z-10 bg-white w-full max-w-md rounded-t-[32px] sm:rounded-[32px] shadow-2xl overflow-hidden border border-slate-100 flex flex-col max-h-[85vh]"
+            >
+              {/* Top Drag Handle for mobile sheet */}
+              <div className="w-full flex justify-center pt-3 pb-1 sm:hidden bg-gradient-to-r from-emerald-50/50 via-teal-50/50 to-white">
+                <div className="w-12 h-1.5 bg-slate-300 rounded-full" />
+              </div>
+
+              {/* Modal Header */}
+              <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-emerald-50 via-teal-50 to-white">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-600 text-white flex items-center justify-center shadow-md shadow-emerald-600/20">
+                    <Layers className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black text-slate-900 tracking-tight">
+                      অফার টাইপ নির্বাচন করুন
+                    </h3>
+                    <p className="text-[11px] font-bold text-slate-500">
+                      আপনার পছন্দের প্যাক ক্যাটাগরি ফিল্টার করুন
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowCategoryModal(false)}
+                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors cursor-pointer border-none"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Category Options List */}
+              <div className="p-4 space-y-2.5 overflow-y-auto max-h-[60vh] hide-scrollbar">
+                {[
+                  { id: 'All', label: 'সকল টাইপ', desc: 'সকল ডাটা, মিনিট ও কম্বো প্যাকেজসমূহ', icon: <Layers className="w-5 h-5" />, activeBg: 'from-slate-900 via-indigo-950 to-slate-900 text-white', iconColor: 'text-indigo-600' },
+                  { id: 'internet', label: 'ইন্টারনেট', desc: 'হাই-স্পিড ৩জি/৪জি/৫জি ডাটা প্যাকসমূহ', icon: <Globe className="w-5 h-5" />, activeBg: 'from-emerald-600 to-teal-700 text-white', iconColor: 'text-emerald-600' },
+                  { id: 'minute', label: 'মিনিট', desc: 'সকল অপারেটর টকটাইম ও মিনিট অফার', icon: <Phone className="w-5 h-5" />, activeBg: 'from-blue-600 to-indigo-700 text-white', iconColor: 'text-blue-600' },
+                  { id: 'combo', label: 'বান্ডেল', desc: 'ডাটা + মিনিট স্পেশাল বাম্পার বান্ডেল', icon: <Box className="w-5 h-5" />, activeBg: 'from-purple-600 to-violet-700 text-white', iconColor: 'text-purple-600' },
+                  { id: 'family', label: 'ফ্যামিলি', desc: 'পারিবারিক ও শেয়ারেবল ফ্যামিলি প্যাক', icon: <Users className="w-5 h-5" />, activeBg: 'from-amber-600 to-orange-700 text-white', iconColor: 'text-amber-600' },
+                  { id: 'gift', label: 'মাই প্যাক', desc: 'বিশেষ গিফট অফার ও ব্যক্তিগত প্যাক', icon: <Gift className="w-5 h-5" />, activeBg: 'from-rose-600 to-pink-700 text-white', iconColor: 'text-rose-600' }
+                ].map((cat) => {
+                  const isSelected = selectedCategory === cat.id;
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedCategory(cat.id);
+                        setShowCategoryModal(false);
+                      }}
+                      className={`w-full p-3.5 rounded-2xl border transition-all flex items-center justify-between text-left cursor-pointer ${
+                        isSelected
+                          ? `bg-gradient-to-r ${cat.activeBg} border-transparent shadow-lg scale-[1.01]`
+                          : 'bg-slate-50/80 hover:bg-white border-slate-200/80 text-slate-800 hover:border-emerald-300 hover:shadow-xs'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                          isSelected ? 'bg-white/20 text-white' : `bg-white ${cat.iconColor} shadow-2xs`
+                        }`}>
+                          {React.cloneElement(cat.icon, {
+                            className: `w-5 h-5 ${isSelected ? 'text-white' : cat.iconColor}`
+                          })}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h4 className={`text-sm font-black ${isSelected ? 'text-white' : 'text-slate-900'}`}>
+                              {cat.label}
+                            </h4>
+                            {isSelected && (
+                              <span className="px-2 py-0.5 bg-white/20 text-white text-[10px] font-extrabold rounded-full backdrop-blur-xs">
+                                সক্রিয়
+                              </span>
+                            )}
+                          </div>
+                          <p className={`text-[11px] font-bold ${isSelected ? 'text-white/80' : 'text-slate-500'}`}>
+                            {cat.desc}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Right Selection Radio Circle */}
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center transition-all shrink-0 ${
+                        isSelected
+                          ? 'bg-white text-emerald-700 shadow-md'
+                          : 'border-2 border-slate-300 bg-white'
+                      }`}>
+                        {isSelected && <Check className="w-4 h-4 stroke-[3]" />}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Modal Footer */}
+              <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedCategory('All');
+                    setShowCategoryModal(false);
+                  }}
+                  className="text-xs font-bold text-slate-500 hover:text-slate-800 cursor-pointer border-none bg-transparent"
+                >
+                  ফিল্টার রিসেট করুন
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowCategoryModal(false)}
+                  className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-md cursor-pointer border-none transition-all"
+                >
+                  সম্পন্ন
+                </button>
+              </div>
             </motion.div>
           </div>
         )}

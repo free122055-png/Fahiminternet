@@ -896,7 +896,7 @@ export default function App() {
       }
     };
 
-    handleZiniCallback();
+    handleZiniCallback().catch(err => console.warn('ZiniPay callback error:', err));
   }, [currentUser]);
 
   const handleLogout = async () => {

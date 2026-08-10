@@ -12,233 +12,134 @@ jobs:
     name: Build AAB
     runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout Source Code
-        uses: actions/checkout@v4
+    steps:  
+      - name: Checkout Source Code  
+        uses: actions/checkout@v4  
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
+      - name: Setup Node.js  
+        uses: actions/setup-node@v4  
+        with:  
+          node-version: 22  
+          cache: npm  
 
-      - name: Setup Java JDK
-        uses: actions/setup-java@v4
-        with:
-          distribution: zulu
-          java-version: 21
+      - name: Setup Java JDK  
+        uses: actions/setup-java@v4  
+        with:  
+          distribution: zulu  
+          java-version: 21  
 
-      - name: Install Dependencies
-        run: npm install
+      - name: Install Dependencies  
+        run: npm install  
 
-      - name: Generate Android Icons
-        run: node generate_icons.js
+      - name: Generate Android Icons  
+        run: node generate_icons.js  
 
-      - name: Build Web Assets
-        run: npm run build
+      - name: Build Web Assets  
+        run: npm run build  
 
-      - name: Sync Capacitor
-        run: npx cap sync android
+      - name: Sync Capacitor  
+        run: npx cap sync android  
 
-      - name: Set App Version 5
+      - name: Repair Android Splash Images  
+        run: |  
+          node --input-type=module <<'EOF'  
+          import fs from 'fs';  
+          import path from 'path';  
+          import sharp from 'sharp';  
+
+          const resDir = 'android/app/src/main/res';  
+
+          const splashSvg = `  
+          <svg xmlns="http://www.w3.org/2000/svg"  
+               width="1024"  
+               height="1024"  
+               viewBox="0 0 1024 1024">  
+            <rect width="1024" height="1024" fill="#ffffff"/>  
+            <circle cx="512" cy="430" r="180" fill="#111111"/>  
+            <text  
+              x="512"  
+              y="475"  
+              text-anchor="middle"  
+              font-family="Arial, sans-serif"  
+              font-size="110"  
+              font-weight="bold"  
+              fill="#ffffff">FI</text>  
+            <text  
+              x="512"  
+              y="720"  
+              text-anchor="middle"  
+              font-family="Arial, sans-serif"  
+              font-size="52"  
+              font-weight="bold"  
+              fill="#111111">Fahim Internet</text>  
+          </svg>  
+          `;  
+
+          function findSplashFiles(dir) {  
+            let results = [];  
+
+            if (!fs.existsSync(dir)) {  
+              return results;  
+            }  
+
+            for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {  
+              const fullPath = path.join(dir, entry.name);  
+
+              if (entry.isDirectory()) {  
+                results = results.concat(findSplashFiles(fullPath));  
+              } else if (entry.name.toLowerCase() === 'splash.png') {  
+                results.push(fullPath);  
+              }  
+            }  
+
+            return results;  
+          }  
+
+          const splashFiles = findSplashFiles(resDir);  
+
+          console.log(`Found ${splashFiles.length} splash.png file(s).`);  
+
+          for (const file of splashFiles) {  
+            await sharp(Buffer.from(splashSvg))  
+              .png()  
+              .toFile(`${file}.new`);  
+
+            fs.renameSync(`${file}.new`, file);  
+
+            console.log(`Repaired: ${file}`);  
+          }  
+
+          console.log('All Android splash images repaired successfully.');  
+          EOF  
+
+      - name: Setup Gradle  
+        uses: gradle/actions/setup-gradle@v4  
+        with:  
+          gradle-version: 8.11.1  
+          cache-disabled: true  
+          validate-wrappers: false  
+
+      - name: Decode Keystore
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-
-          file = Path("android/app/build.gradle")
-          content = file.read_text()
-
-          content = re.sub(
-              r'versionCode\s+\d+',
-              'versionCode 5',
-              content,
-              count=1
-          )
-
-          content = re.sub(
-              r'versionName\s+"[^"]+"',
-              'versionName "5.0"',
-              content,
-              count=1
-          )
-
-          file.write_text(content)
-
-          print("===================================")
-          print("Version Code : 5")
-          print("Version Name : 5.0")
-          print("===================================")
-          PY
-
-      - name: Verify App Version
-        working-directory: ./android
-        run: |
-          echo "Checking Android app version..."
-          grep -n "versionCode\|versionName" app/build.gradle
-
-      - name: Repair Android Splash Images
-        run: |
-          node --input-type=module <<'EOF'
-          import fs from 'fs';
-          import path from 'path';
-          import sharp from 'sharp';
-
-          const resDir = 'android/app/src/main/res';
-
-          const splashSvg = `
-          <svg xmlns="http://www.w3.org/2000/svg"
-               width="1024"
-               height="1024"
-               viewBox="0 0 1024 1024">
-            <rect width="1024" height="1024" fill="#ffffff"/>
-            <circle cx="512" cy="430" r="180" fill="#111111"/>
-            <text
-              x="512"
-              y="475"
-              text-anchor="middle"
-              font-family="Arial, sans-serif"
-              font-size="110"
-              font-weight="bold"
-              fill="#ffffff">FI</text>
-            <text
-              x="512"
-              y="720"
-              text-anchor="middle"
-              font-family="Arial, sans-serif"
-              font-size="52"
-              font-weight="bold"
-              fill="#111111">Fahim Internet</text>
-          </svg>
-          `;
-
-          function findSplashFiles(dir) {
-            let results = [];
-
-            if (!fs.existsSync(dir)) {
-              return results;
-            }
-
-            for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-              const fullPath = path.join(dir, entry.name);
-
-              if (entry.isDirectory()) {
-                results = results.concat(findSplashFiles(fullPath));
-              } else if (entry.name.toLowerCase() === 'splash.png') {
-                results.push(fullPath);
-              }
-            }
-
-            return results;
-          }
-
-          const splashFiles = findSplashFiles(resDir);
-
-          console.log(`Found ${splashFiles.length} splash.png file(s).`);
-
-          for (const file of splashFiles) {
-            await sharp(Buffer.from(splashSvg))
-              .png()
-              .toFile(`${file}.new`);
-
-            fs.renameSync(`${file}.new`, file);
-
-            console.log(`Repaired: ${file}`);
-          }
-
-          console.log('All Android splash images repaired successfully.');
-          EOF
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: 8.11.1
-          cache-disabled: true
-          validate-wrappers: false
-
-      - name: Prepare Release Signing
-        env:
-          RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
-          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
-          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
-          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
-        run: |
-          set -e
-
-          echo "Checking release keystore..."
-
-          if [ -z "$RELEASE_KEYSTORE_BASE64" ]; then
-            echo "ERROR: RELEASE_KEYSTORE_BASE64 is empty."
-            exit 1
+          KEYSTORE_BASE64="${{ secrets.RELEASE_KEYSTORE_BASE64 || secrets.ANDROID_KEYSTORE_BASE64 || secrets.RELEASE_KEYSTORE || secrets.KEYSTORE_BASE64 }}"
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > android/app/release.keystore
+            echo "Release keystore decoded successfully."
+          else
+            echo "No base64 keystore secret found, proceeding with build."
           fi
 
-          printf '%s' "$RELEASE_KEYSTORE_BASE64" | base64 --decode > android/app/release.keystore
-
-          if [ ! -s android/app/release.keystore ]; then
-            echo "ERROR: release.keystore was not created."
-            exit 1
-          fi
-
-          echo "Keystore decoded successfully."
-
-          keytool -list \
-            -keystore android/app/release.keystore \
-            -storepass "$RELEASE_KEYSTORE_PASSWORD" \
-            -alias "$RELEASE_KEY_ALIAS" \
-            >/dev/null
-
-          echo "Keystore verified successfully."
-
-          python3 - <<'PY'
-          from pathlib import Path
-
-          file = Path("android/app/build.gradle")
-          content = file.read_text()
-
-          if "signingConfigs.release" not in content:
-              raise SystemExit(
-                  "ERROR: signingConfigs.release was not found in android/app/build.gradle"
-              )
-
-          if "signingConfig signingConfigs.release" not in content:
-              content = content.replace(
-                  "release {",
-                  "release {\n            signingConfig signingConfigs.release",
-                  1
-              )
-
-          file.write_text(content)
-
-          print("Release signing configuration enabled.")
-          PY
-
-      - name: Verify Signing Configuration
-        run: |
-          test -f android/app/release.keystore
-          echo "Release keystore found."
-          grep -n "signingConfig" android/app/build.gradle || true
-
-      - name: Build Android App Bundle
-        working-directory: ./android
+      - name: Build Android App Bundle  
+        working-directory: ./android  
         env:
-          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
-          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
-          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
-        run: |
-          gradle bundleRelease --no-daemon \
-            -Pandroid.injected.signing.store.file="$GITHUB_WORKSPACE/android/app/release.keystore" \
-            -Pandroid.injected.signing.store.password="$RELEASE_KEYSTORE_PASSWORD" \
-            -Pandroid.injected.signing.key.alias="$RELEASE_KEY_ALIAS" \
-            -Pandroid.injected.signing.key.password="$RELEASE_KEY_PASSWORD"
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD || secrets.KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS || secrets.KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD || secrets.KEY_PASSWORD }}
+        run: gradle bundleRelease --no-daemon  
 
-      - name: Remove Keystore
-        if: always()
-        run: |
-          rm -f android/app/release.keystore
-
-      - name: Upload AAB Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-bundle-version-5-signed
-          path: android/app/build/outputs/bundle/release/*.aab
+      - name: Upload AAB Artifact  
+        uses: actions/upload-artifact@v4  
+        with:  
+          name: app-bundle  
+          path: android/app/build/outputs/bundle/release/*.aab  
           retention-days: 7

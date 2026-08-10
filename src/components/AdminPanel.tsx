@@ -157,6 +157,8 @@ export default function AdminPanel({
       const docs: any[] = [];
       snap.forEach((d) => docs.push({ id: d.id, ...d.data() }));
       setResultsList(docs);
+    }, (err) => {
+      console.warn('Results listener error:', err);
     });
 
     const unsubSoftware = onSnapshot(collection(db, 'software_requests'), (snap) => {
@@ -165,6 +167,8 @@ export default function AdminPanel({
       // Sort newest first
       docs.sort((a, b) => new Date(b.createdAt || '').getTime() - new Date(a.createdAt || '').getTime());
       setSoftwareRequests(docs);
+    }, (err) => {
+      console.warn('Software listener error:', err);
     });
 
     const unsubUsers = onSnapshot(collection(db, 'users'), (snap) => {
@@ -181,6 +185,8 @@ export default function AdminPanel({
       snap.forEach((d) => docs.push({ id: d.id, ...d.data() }));
       docs.sort((a, b) => new Date(b.createdAt || '').getTime() - new Date(a.createdAt || '').getTime());
       setAddMoneyRequests(docs);
+    }, (err) => {
+      console.warn('AddMoney listener error:', err);
     });
 
     return () => {
