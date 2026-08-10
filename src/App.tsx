@@ -945,7 +945,7 @@ export default function App() {
       await signOut(auth);
       setCurrentUser(null);
       setIsAdmin(false);
-      setActiveTab('homepage');
+      navigateTo('homepage');
       showToast('🔒 সফলভাবে লগআউট করা হয়েছে!', 'success');
     } catch (e) {
       console.error('Logout error:', e);
@@ -1634,7 +1634,7 @@ export default function App() {
         {activeTab === 'builder' && (
           <div className="h-full overflow-y-auto bg-slate-50 p-4">
             <button 
-              onClick={() => setActiveTab('homepage')} 
+              onClick={() => navigateTo('homepage')} 
               className="px-4 py-2 bg-slate-900 text-white rounded-xl font-bold text-xs mb-4 flex items-center gap-2 cursor-pointer border-none shadow-xs"
             >
               ← অ্যাপে ফিরে যান
@@ -1650,7 +1650,7 @@ export default function App() {
         {activeTab === 'tracking' && (
           <div className="h-full overflow-y-auto bg-slate-50 p-4">
             <button 
-              onClick={() => setActiveTab('homepage')} 
+              onClick={() => navigateTo('homepage')} 
               className="px-4 py-2 bg-slate-900 text-white rounded-xl font-bold text-xs mb-4 flex items-center gap-2 cursor-pointer border-none shadow-xs"
             >
               ← অ্যাপে ফিরে যান
@@ -1672,7 +1672,7 @@ export default function App() {
           <div className="h-full overflow-y-auto bg-slate-100 p-4">
             <div className="max-w-7xl mx-auto space-y-4">
               <button 
-                onClick={() => setActiveTab('homepage')} 
+                onClick={() => navigateTo('homepage')} 
                 className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl font-bold text-xs flex items-center gap-2 cursor-pointer border-none shadow-sm transition-all"
               >
                 ← সফটওয়্যার ড্যাশবোর্ডে ফিরে যান
@@ -1692,7 +1692,7 @@ export default function App() {
                 onAddWifiPack={handleAddWifiPack}
                 onDeleteWifiPack={handleDeleteWifiPack}
                 isAdmin={isAdmin}
-                onBackToHome={() => setActiveTab('homepage')}
+                onBackToHome={() => navigateTo('homepage')}
               />
             </div>
           </div>
@@ -1700,7 +1700,7 @@ export default function App() {
 
         {/* VIEW 5: PRIVACY POLICY */}
         {activeTab === 'privacy' && (
-          <PrivacyPolicy onClose={() => setActiveTab('homepage')} />
+          <PrivacyPolicy onClose={() => navigateTo('homepage')} />
         )}
       </main>
 
@@ -1736,9 +1736,9 @@ export default function App() {
             }
           }
           if (isUserAdmin) {
-            setActiveTab('admin');
+            navigateTo('admin');
           } else {
-            setActiveTab('homepage');
+            navigateTo('homepage');
           }
         }}
       />
@@ -1800,7 +1800,7 @@ export default function App() {
               onClick={() => {
                 setZiniSuccessOrder(null);
                 setZiniVerifying(false);
-                setActiveTab('tracking'); // Redirect them to tracking page so they can watch their order progress!
+                navigateTo('tracking'); // Redirect them to tracking page so they can watch their order progress!
               }}
               className="w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white font-black text-sm rounded-xl transition-all shadow-sm  active:scale-[0.99] cursor-pointer"
             >
