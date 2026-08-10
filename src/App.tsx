@@ -34,6 +34,7 @@ import {
 } from 'firebase/firestore';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import AuthModal from './components/AuthModal';
+import PrivacyPolicy from './components/PrivacyPolicy';
 import SoftwareDashboard from './components/SoftwareDashboard';
 
 // 5 Specific Hero Packages shown in the Client Screenshot
@@ -245,8 +246,9 @@ const DEFAULT_SETTINGS: SiteSettings = {
 export default function App() {
   const [renderError, setRenderError] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<'homepage' | 'store' | 'builder' | 'tracking' | 'admin'>(() => {
+  const [activeTab, setActiveTab] = useState<'homepage' | 'store' | 'builder' | 'tracking' | 'admin' | 'privacy'>(() => {
     try {
+      if (window.location.pathname === '/privacy-policy') return 'privacy';
       const params = new URLSearchParams(window.location.search);
       if (params.get('mode') === 'admin' || params.get('admin') === 'true' || params.get('panel') === 'admin') {
         return 'admin';
@@ -1656,6 +1658,11 @@ export default function App() {
               />
             </div>
           </div>
+        )}
+
+        {/* VIEW 5: PRIVACY POLICY */}
+        {activeTab === 'privacy' && (
+          <PrivacyPolicy onClose={() => setActiveTab('homepage')} />
         )}
       </main>
 
