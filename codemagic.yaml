@@ -4,13 +4,31 @@ workflows:
     max_build_duration: 120
 
     environment:
+      node: latest
       java: 17
 
     scripts:
-      - name: Build Debug APK
+      - name: Set Android SDK location
         script: |
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > "$CM_BUILD_DIR/android/local.properties"
+
+      - name: Install dependencies
+        script: |
+          npm ci
+
+      - name: Build web app
+        script: |
+          npm run build
+
+      - name: Sync Capacitor Android
+        script: |
+          npx cap sync android
+
+      - name: Build Android APK
+        script: |
+          cd android
           chmod +x ./gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleRelease
 
     artifacts:
-      - app/build/outputs/apk/debug/*.apk
+      - android/app/build/outputs/**/*.apk
