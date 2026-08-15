@@ -390,12 +390,15 @@ const fetchSiteConfigViaREST = async (docId: string = 'site_config') => {
 };
 
 // Safe dual-mode helpers for ES Modules (development) and CommonJS (production bundle)
-const getFilename = () => {
-  return typeof __filename !== 'undefined' ? __filename : (import.meta as any).url ? fileURLToPath((import.meta as any).url) : '';
-};
-
-const getDirname = () => {
-  return typeof __dirname !== 'undefined' ? __dirname : (import.meta as any).url ? path.dirname(fileURLToPath((import.meta as any).url)) : '';
+const getDistPath = () => {
+  const rootDist = path.join(process.cwd(), 'dist');
+  if (fs.existsSync(path.join(rootDist, 'index.html'))) {
+    return rootDist;
+  }
+  if (typeof __dirname !== 'undefined' && fs.existsSync(path.join(__dirname, 'index.html'))) {
+    return __dirname;
+  }
+  return rootDist;
 };
 
 async function startServer() {
@@ -422,6 +425,15 @@ async function startServer() {
     fs.mkdirSync(uploadsDir, { recursive: true });
   }
   app.use('/uploads', express.static(uploadsDir));
+
+  // Health check endpoint for Cloud Run container probes
+  app.get('/api/health', (req, res) => {
+    res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+  });
+
+  app.get('/healthz', (req, res) => {
+    res.status(200).send('OK');
+  });
 
   // FCM Image Upload Endpoint
   app.post('/api/fcm/upload-image', async (req, res) => {
@@ -1961,10 +1973,10 @@ Respond appropriately to the user's input: "${message}". Maintain the context of
     }
   });
 
-  // Highly robust production auto-detection: if dist folder exists, NODE_ENV is production, or we are running the compiled server.cjs
+  // Highly robust production auto-detection: if dist folder exists, NODE_ENV is production, or server.ts is bundled
   const isProduction = 
     process.env.NODE_ENV === 'production' || 
-    getFilename().endsWith('server.cjs') || 
+    (typeof __dirname !== 'undefined' && __dirname.includes('dist')) ||
     !fs.existsSync(path.join(process.cwd(), 'server.ts'));
 
   // Vite middleware for development or fallback for production
@@ -1978,8 +1990,7 @@ Respond appropriately to the user's input: "${message}". Maintain the context of
     app.use(vite.middlewares);
   } else {
     console.log('Starting server in PRODUCTION mode, serving pre-built static files...');
-    // If we are running the compiled bundle server.cjs, __dirname is the 'dist' directory.
-    const distPath = getFilename().endsWith('server.cjs') ? getDirname() : path.join(process.cwd(), 'dist');
+    const distPath = getDistPath();
     
     console.log(`Serving static files from directory: ${distPath}`);
     app.use(express.static(distPath));

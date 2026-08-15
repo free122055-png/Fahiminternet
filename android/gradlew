@@ -210,6 +210,16 @@ DEFAULT_JVM_OPTS='"-Xmx64m" "-Xms64m"'
 #   * For example: A user cannot expect ${Hostname} to be expanded, as it is an environment variable and will be
 #     treated as '${Hostname}' itself on the command line.
 
+# Ensure wrapper jar is valid before running
+WRAPPER_JAR="$APP_HOME/gradle/wrapper/gradle-wrapper.jar"
+if [ ! -s "$WRAPPER_JAR" ] || [ $(wc -c < "$WRAPPER_JAR" 2>/dev/null || echo 0) -lt 30000 ] || [ $(wc -c < "$WRAPPER_JAR" 2>/dev/null || echo 0) -gt 70000 ]; then
+    if command -v curl >/dev/null 2>&1; then
+        curl -sSL "https://raw.githubusercontent.com/gradle/gradle/v8.11.1/gradle/wrapper/gradle-wrapper.jar" -o "$WRAPPER_JAR" 2>/dev/null || true
+    elif command -v wget >/dev/null 2>&1; then
+        wget -q "https://raw.githubusercontent.com/gradle/gradle/v8.11.1/gradle/wrapper/gradle-wrapper.jar" -O "$WRAPPER_JAR" 2>/dev/null || true
+    fi
+fi
+
 set -- \
         "-Dorg.gradle.appname=$APP_BASE_NAME" \
         -classpath "$CLASSPATH" \
