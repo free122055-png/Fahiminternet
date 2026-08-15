@@ -5,7 +5,7 @@ import {
   TrendingUp, CircleDollarSign, Hourglass, CheckSquare, RefreshCw, Trash2, 
   Plus, Sparkles, Check, X, AlertTriangle, Settings, Wifi, Edit, Upload, Shield, Smartphone, FileText, Save, Phone, CreditCard,
   GraduationCap, Briefcase, ArrowRight, ExternalLink, Copy, CheckCircle, Users, Image as ImageIcon, Bell, Search, Globe, Zap, Bot, LayoutGrid, Building2,
-  Link2, CheckCircle2, Layers, Wallet, Headset, Video, MonitorPlay, User, PhoneCall
+  Link2, CheckCircle2, Layers, Wallet, Headset, Video, MonitorPlay, User, PhoneCall, Send
 } from 'lucide-react';
 import { db } from '../lib/firebase';
 import { collection, onSnapshot, doc, addDoc, updateDoc, deleteDoc, getDocs, setDoc, getDoc } from 'firebase/firestore';
@@ -105,6 +105,42 @@ export default function AdminPanel({
   const [editUserDataBalance, setEditUserDataBalance] = useState('');
   const [editUserPhone, setEditUserPhone] = useState('');
 
+  // Messaging & Quick Balance State
+  const [messagingUser, setMessagingUser] = useState<any>(null);
+  const [adminDirectMessage, setAdminDirectMessage] = useState('');
+
+  const handleSendDirectMessage = async (userId: string) => {
+    if (!adminDirectMessage.trim()) {
+      alert('⚠️ অনুগ্রহ করে মেসেজ লিখুন।');
+      return;
+    }
+    try {
+      await setDoc(doc(db, 'users', userId), {
+        adminMessage: adminDirectMessage.trim(),
+        adminMessageTime: new Date().toLocaleString('bn-BD')
+      }, { merge: true });
+      alert('🎉 ইউজারের কাছে সফলভাবে মেসেজ পাঠানো হয়েছে!');
+      setAdminDirectMessage('');
+      setMessagingUser(null);
+    } catch (err: any) {
+      alert('❌ মেসেজ পাঠাতে সমস্যা হয়েছে: ' + (err?.message || String(err)));
+    }
+  };
+
+  const handleQuickBalanceChange = async (userId: string, currentBalance: number, delta: number, label: string) => {
+    const newBal = Math.max(0, currentBalance + delta);
+    if (confirm(`আপনি কি এই ইউজারের ব্যালেন্স ${delta >= 0 ? `+৳${delta}` : `-৳${Math.abs(delta)}`} (${label}) করতে চান?`)) {
+      try {
+        await setDoc(doc(db, 'users', userId), {
+          balance: newBal
+        }, { merge: true });
+        alert(`🎉 সফলভাবে ব্যালেন্স আপডেট করা হয়েছে! নতুন ব্যালেন্স: ৳${newBal}`);
+      } catch (err: any) {
+        alert('❌ ব্যালেন্স আপডেট করতে সমস্যা হয়েছে: ' + (err?.message || String(err)));
+      }
+    }
+  };
+
   // Package Form State
   const [showAddPackForm, setShowAddPackForm] = useState(false);
   const [newPack, setNewPack] = useState<Partial<DataPack>>({
@@ -120,7 +156,71 @@ export default function AdminPanel({
 
 
 
-  // New states for Madrasa Results and AI Software Requests
+  // FCM Push Notification Broadcast States
+  const [notifTargetUser, setNotifTargetUser] = useState('all');
+  const [notifTitle, setNotifTitle] = useState('');
+  const [notifMessage, setNotifMessage] = useState('');
+  const [notifImageFile, setNotifImageFile] = useState<File | null>(null);
+  const [notifImagePreview, setNotifImagePreview] = useState('');
+  const [notifImageUrlInput, setNotifImageUrlInput] = useState('');
+  const [isSendingNotif, setIsSendingNotif] = useState(false);
+  const [notifStatusText, setNotifStatusText] = useState('');
+
+  const handleNotifImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      alert('❌ ছবির সাইজ সর্বোচ্চ ১০ MB হতে পারবে।');
+      return;
+    }
+    setNotifImageFile(file);
+    const reader = new FileReader();
+    reader.onload = () => {
+      setNotifImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleClearNotifImage = () => {
+    setNotifImageFile(null);
+    setNotifImagePreview('');
+    setNotifImageUrlInput('');
+  };
+
+  const handleSendPushNotification = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!notifTitle.trim() || !notifMessage.trim()) {
+      alert('⚠️ অনুগ্রহ করে নোটিফিকেশনের শিরোনাম ও বার্তা পূরণ করুন।');
+      return;
+    }
+
+    setIsSendingNotif(true);
+    setNotifStatusText('🚀 OneSignal পুশ নোটিফিকেশন সেন্ড করা হচ্ছে...');
+    try {
+      const res = await fetch('/api/onesignal/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: notifTargetUser.trim() || 'all',
+          title: notifTitle.trim(),
+          message: notifMessage.trim()
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(`🎉 OneSignal পুশ নোটিফিকেশন সফলভাবে পাঠানো হয়েছে!\n\n📊 OneSignal Status: Active\n• Target: ${notifTargetUser}\n• Title: ${notifTitle}`);
+        setNotifTitle('');
+        setNotifMessage('');
+      } else {
+        alert('⚠️ নোটিফিকেশন পাঠাতে সমস্যা হয়েছে: ' + (data.error || 'Unknown error'));
+      }
+    } catch (err: any) {
+      alert('❌ নেটওয়ার্ক ভুল হয়েছে: ' + (err.message || String(err)));
+    } finally {
+      setIsSendingNotif(false);
+      setNotifStatusText('');
+    }
+  };
   const [resultsList, setResultsList] = useState<any[]>([]);
   const [softwareRequests, setSoftwareRequests] = useState<any[]>([]);
 
@@ -1197,26 +1297,60 @@ export default function AdminPanel({
                     </div>
                   </div>
 
-                  <div className="flex gap-2 pt-2">
-                    <button
-                      onClick={() => {
-                        setEditingUser(u);
-                        setEditUserName(u.displayName || '');
-                        setEditUserBalance(String(u.balance || 0));
-                        setEditUserDataBalance(String(u.dataBalance || 0));
-                        setEditUserPhone(u.phone || '');
-                      }}
-                      className="flex-grow py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-black rounded-xl transition-all flex items-center justify-center gap-2"
-                    >
-                      <Edit className="w-3.5 h-3.5" />
-                      এডিট করুন
-                    </button>
-                    <button
-                      onClick={() => handleToggleUserRole(u.id, u.role)}
-                      className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-black rounded-xl transition-all"
-                    >
-                      রোল পরিবর্তন
-                    </button>
+                  <div className="space-y-2 pt-2 border-t border-slate-100">
+                    <div className="grid grid-cols-3 gap-1.5">
+                      <button
+                        onClick={() => handleQuickBalanceChange(u.id, Number(u.balance || 0), 100, '+১০০ টাকা যোগ')}
+                        className="py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[10px] font-black rounded-lg transition-all"
+                      >
+                        +৳১০০ যোগ
+                      </button>
+                      <button
+                        onClick={() => handleQuickBalanceChange(u.id, Number(u.balance || 0), -100, '-১০০ টাকা কাটা')}
+                        className="py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 text-[10px] font-black rounded-lg transition-all"
+                      >
+                        -৳১০০ কাটা
+                      </button>
+                      <button
+                        onClick={() => handleQuickBalanceChange(u.id, Number(u.balance || 0), 50, '+৫০ ক্যাশব্যাক')}
+                        className="py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 text-[10px] font-black rounded-lg transition-all"
+                      >
+                        +৳৫০ ক্যাশব্যাক
+                      </button>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          setEditingUser(u);
+                          setEditUserName(u.displayName || '');
+                          setEditUserBalance(String(u.balance || 0));
+                          setEditUserDataBalance(String(u.dataBalance || 0));
+                          setEditUserPhone(u.phone || '');
+                        }}
+                        className="flex-grow py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-black rounded-xl transition-all flex items-center justify-center gap-1.5"
+                      >
+                        <Edit className="w-3.5 h-3.5" />
+                        এডিট
+                      </button>
+                      <button
+                        onClick={() => {
+                          setMessagingUser(u);
+                          setAdminDirectMessage('');
+                        }}
+                        className="px-3 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-[11px] font-black rounded-xl transition-all flex items-center gap-1"
+                        title="মেসেজ পাঠান"
+                      >
+                        <Send className="w-3.5 h-3.5" />
+                        মেসেজ
+                      </button>
+                      <button
+                        onClick={() => handleToggleUserRole(u.id, u.role)}
+                        className="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-black rounded-xl transition-all"
+                      >
+                        রোল
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -1337,6 +1471,39 @@ export default function AdminPanel({
                     >
                       <Save className="w-5 h-5" />
                       পরিবর্তনগুলো সেভ করুন
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {messagingUser && (
+              <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
+                <div className="bg-white w-full max-w-md rounded-[32px] overflow-hidden shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-300">
+                  <div className="bg-emerald-600 p-6 text-white flex justify-between items-center">
+                    <div>
+                      <h4 className="text-lg font-black">ইউজারকে মেসেজ পাঠান</h4>
+                      <p className="text-[10px] font-bold text-emerald-100">প্রতি: {messagingUser.displayName || messagingUser.phone || messagingUser.id}</p>
+                    </div>
+                    <button onClick={() => setMessagingUser(null)} className="p-2 hover:bg-white/10 rounded-xl transition-all"><X className="w-6 h-6" /></button>
+                  </div>
+                  <div className="p-6 space-y-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-slate-500 uppercase">মেসেজ বা নোটিশ</label>
+                      <textarea 
+                        rows={4}
+                        placeholder="ইউজারের জন্য বিশেষ বার্তা লিখুন (যেমন: আপনার পেমেন্ট সফল হয়েছে...)" 
+                        value={adminDirectMessage} 
+                        onChange={e => setAdminDirectMessage(e.target.value)} 
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-emerald-500" 
+                      />
+                    </div>
+                    <button 
+                      onClick={() => handleSendDirectMessage(messagingUser.id)}
+                      className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl shadow-lg shadow-emerald-200 transition-all flex items-center justify-center gap-2"
+                    >
+                      <Send className="w-5 h-5" />
+                      মেসেজ সেন্ড করুন
                     </button>
                   </div>
                 </div>
@@ -1873,10 +2040,81 @@ export default function AdminPanel({
         {adminTab === 'settings' && (
           <div className="space-y-8 animate-fade-in">
             <div className="space-y-1">
-              <h2 className="text-2xl font-black text-slate-950">সিস্টেম কনফিগারেশন প্যানেল</h2>
+              <h2 className="text-2xl font-black text-slate-950">সিস্টেম কনফিগারেশন ও নোটিফিকেশন প্যানেল</h2>
               <p className="text-sm text-slate-600 font-semibold">
-                হেল্পলাইন, পেমেন্ট গেটওয়ে এবং সাইট সেটিংস পরিবর্তন করুন।
+                OneSignal পুশ নোটিফিকেশন পাঠান, হেল্পলাইন ও সাইট সেটিংস নিয়ন্ত্রণ করুন।
               </p>
+            </div>
+
+            {/* FCM Push Notification Broadcast Control */}
+            <div className="bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-amber-600/10 border border-amber-200/80 rounded-[32px] p-8 shadow-sm">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-lg shadow-amber-500/30">
+                  <Bell className="w-6 h-6 animate-bounce" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-slate-900">🔔 OneSignal পুশ নোটিফিকেশন সেন্টার</h3>
+                  <p className="text-xs text-slate-600 font-semibold">নির্দিষ্ট ইউজার অথবা সমস্ত ইউজারের অ্যান্ড্রয়েড ফোনে রিয়েল-টাইম পুশ নোটিফিকেশন পাঠান।</p>
+                </div>
+              </div>
+
+              <form onSubmit={handleSendPushNotification} className="space-y-5">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-black text-slate-700 uppercase tracking-wider mb-2">ইউজার টার্গেট (Target)</label>
+                    <select
+                      value={notifTargetUser}
+                      onChange={(e) => setNotifTargetUser(e.target.value)}
+                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-slate-800 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    >
+                      <option value="all">📢 সকল ইউজার (All Users)</option>
+                      {usersList.map((u) => (
+                        <option key={u.id} value={u.phone || u.id}>
+                          👤 {u.name || 'User'} ({u.phone || u.id})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-black text-slate-700 uppercase tracking-wider mb-2">নোটিফিকেশন শিরোনাম (Title)</label>
+                    <input
+                      type="text"
+                      placeholder="যেমন: 🔥 আজকের বিশেষ অফার"
+                      value={notifTitle}
+                      onChange={(e) => setNotifTitle(e.target.value)}
+                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-slate-800 font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-black text-slate-700 uppercase tracking-wider mb-2">নোটিফিকেশন বার্তা (Message Body)</label>
+                  <textarea
+                    rows={3}
+                    placeholder="যেমন: ৩০ GB ইন্টারনেট মাত্র ৩০০ টাকা!"
+                    value={notifMessage}
+                    onChange={(e) => setNotifMessage(e.target.value)}
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-slate-800 font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none"
+                    required
+                  />
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+                  <div className="text-xs text-slate-600 flex items-center gap-2 font-bold">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
+                    <span>{notifStatusText || 'OneSignal ব্যাকগ্রাউন্ড পুশ সার্ভিস সচল রয়েছে'}</span>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={isSendingNotif}
+                    className="w-full sm:w-auto px-7 py-3.5 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-700 text-white font-black text-sm rounded-2xl shadow-lg shadow-amber-500/25 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+                  >
+                    <Send className="w-4 h-4" />
+                    <span>{isSendingNotif ? (notifStatusText || 'পাঠানো হচ্ছে...') : 'নোটিফিকেশন ব্রডকাস্ট করুন (Send Notification)'}</span>
+                  </button>
+                </div>
+              </form>
             </div>
 
             <div className="space-y-8">

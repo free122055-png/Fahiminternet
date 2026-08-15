@@ -3,8 +3,15 @@ import {
   User, ShieldCheck, MapPin, Settings, LogOut, Trash2, 
   ChevronRight, Bell, Lock, FileText, Smartphone, CreditCard,
   Headset, MessageCircle, HelpCircle, Gift, Wallet, Package, Clock, Heart, BadgeCheck, Copy,
-  Info, AlertTriangle, CheckCircle, PackageSearch, Camera
+  Info, AlertTriangle, CheckCircle, PackageSearch, Camera, Mail, PhoneCall
 } from 'lucide-react';
+
+// Added premium icons placeholders
+const FacebookIcon = () => <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874V12h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>;
+const InstagramIcon = () => <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 1.23.056 2.062.25 2.784.533.754.293 1.293.642 1.858 1.207.564.564.914 1.104 1.207 1.858.283.722.477 1.554.533 2.784.058 1.266.07 1.646.07 4.85s-.012 3.584-.07 4.85c-.056 1.23-.25 2.062-.533 2.784-.293.754-.642 1.293-1.207 1.858-.564.564-1.104.914-1.858 1.207-.722.283-1.554.477-2.784.533-1.266.058-1.646.07-4.85.07s-3.584-.012-4.85-.07c-1.23-.056-2.062-.25-2.784-.533-.754-.293-1.293-.642-1.858-1.207-.564-.564-.914-1.104-1.207-1.858-.283-.722-.477-1.554-.533-2.784-.058-1.266-.07-1.646-.07-4.85s.012-3.584.07-4.85c.056-1.23.25-2.062.533-2.784.293-.754.642-1.293 1.207-1.858.564-.564 1.104-.914 1.858-1.207.722-.283 1.554-.477 2.784-.533 1.266-.058 1.646-.07 4.85-.07zm0 2.163c-3.138 0-3.51.013-4.752.069-1.144.053-1.763.242-2.176.402-.547.212-.936.466-1.346.876-.41.41-.664.799-.876 1.346-.16.413-.349 1.032-.402 2.176-.056 1.242-.069 1.614-.069 4.752s.013 3.51.069 4.752c.053 1.144.242 1.763.402 2.176.212.547.466.936.876 1.346.41.41.799.664 1.346.876.413.16 1.032.349 2.176.402 1.242.056 1.614.069 4.752.069s3.51-.013 4.752-.069c1.144-.053 1.763-.242 2.176-.402.547-.212.936-.466 1.346-.876.41-.41.664-.799.876-1.346.16-.413.349-1.032.402-2.176.056-1.242.069-1.614.069-4.752s-.013-3.51-.069-4.752c-.053-1.144-.242-1.763-.402-2.176-.212-.547-.466-.936-.876-1.346-.41-.41-.799-.664-1.346-.876-.413-.16-1.032-.349-2.176-.402-1.242-.056-1.614-.069-4.752-.069zM12 7.389c-2.549 0-4.611 2.062-4.611 4.611s2.062 4.611 4.611 4.611 4.611-2.062 4.611-4.611-2.062-4.611-4.611-4.611zm0 7.058c-1.35 0-2.447-1.097-2.447-2.447s1.097-2.447 2.447-2.447 2.447 1.097 2.447 2.447-1.097 2.447-2.447 2.447zm6.474-7.147c-.595 0-1.077.482-1.077 1.077s.482 1.077 1.077 1.077 1.077-.482 1.077-1.077-.482-1.077-1.077-1.077z"/></svg>;
+const TelegramIcon = () => <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.124l-6.87 4.32-2.96-.924c-1.43-.455-1.458-1.438.305-2.128l11.564-4.464c.535-.205 1.01.127.838 1.94z"/></svg>;
+const WhatsAppIcon = () => <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.67-1.612-.916-2.207-.242-.579-.487-.5-67-.508-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.005 0C5.374 0 0 5.374 0 12.005c0 2.091.545 4.133 1.583 5.932L0 24l6.326-1.657a11.85 11.85 0 005.679 1.442h.005c6.631 0 12.005-5.374 12.005-12.005 0-3.21-1.25-6.23-3.523-8.503"/></svg>;
+
 
 interface UserProfileProps {
   currentUser?: any;
@@ -191,6 +198,28 @@ export default function UserProfile({ currentUser, settings, onLogout, onAction,
             subtitle="সরাসরি আমাদের সাথে যোগাযোগ করুন"
             onClick={() => onAction('contact_us')} 
           />
+          <div className="px-4 pb-4 grid grid-cols-5 gap-2">
+            <a href="mailto:fahimbillha70@gmail.com" className="flex flex-col items-center gap-1 p-2 bg-slate-50 rounded-xl hover:bg-emerald-50 transition-colors">
+              <Mail className="w-5 h-5 text-emerald-600" />
+              <span className="text-[9px] font-bold text-slate-700">Email</span>
+            </a>
+            <a href="https://wa.me/8801618599077" target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-1 p-2 bg-slate-50 rounded-xl hover:bg-emerald-50 transition-colors">
+              <WhatsAppIcon />
+              <span className="text-[9px] font-bold text-slate-700">WhatsApp</span>
+            </a>
+            <a href="https://www.facebook.com/fahim12205" target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-1 p-2 bg-slate-50 rounded-xl hover:bg-emerald-50 transition-colors">
+              <FacebookIcon />
+              <span className="text-[9px] font-bold text-slate-700">Facebook</span>
+            </a>
+            <a href="https://www.instagram.com/rajibul_islam_fahim?igsh=ZmZjdnBxbnpja2Jz" target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-1 p-2 bg-slate-50 rounded-xl hover:bg-emerald-50 transition-colors">
+              <InstagramIcon />
+              <span className="text-[9px] font-bold text-slate-700">Insta</span>
+            </a>
+            <a href="https://t.me/fahim123633" target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-1 p-2 bg-slate-50 rounded-xl hover:bg-emerald-50 transition-colors">
+              <TelegramIcon />
+              <span className="text-[9px] font-bold text-slate-700">Tele</span>
+            </a>
+          </div>
           <ListItem 
             icon={<HelpCircle className="text-blue-600" />} 
             title="Help / FAQ" 

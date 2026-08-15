@@ -103,6 +103,8 @@ export interface SiteSettings {
   ziniRegisteredDomain?: string;
   zinipayApiKey?: string;
   zinipayDomain?: string;
+  fcmServerKey?: string;
+  fcmVapidKey?: string;
   bkashLogoUrl?: string;
   nagadLogoUrl?: string;
   rocketLogoUrl?: string;

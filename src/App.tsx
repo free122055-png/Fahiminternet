@@ -1,7 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'motion/react';
 import { AppTab, DataPack, Order, Operator, PackCategory, SiteSettings, WifiPackage } from './types';
 import { INITIAL_PACKS } from './data';
+import { initOneSignal, triggerPaymentNotification, triggerRechargeNotification } from './lib/onesignalService';
+import NotificationPromptModal from './components/NotificationPromptModal';
 import Header from './components/Header';
 import Toast, { ToastType } from './components/Toast';
 import PackCard from './components/PackCard';
@@ -235,6 +237,8 @@ const DEFAULT_SETTINGS: SiteSettings = {
   airtelLogoUrl: '',
   teletalkLogoUrl: '',
   ziniRegisteredDomain: '',
+  fcmServerKey: '',
+  fcmVapidKey: '',
   bkashLogoUrl: '',
   nagadLogoUrl: '',
   rocketLogoUrl: '',
@@ -294,6 +298,22 @@ export default function App() {
     setNavigationStack(prev => [...prev, tab]);
     setActiveTab(tab);
   };
+
+  const handleBack = () => {
+    if (navigationStack.length > 1) {
+      const newStack = [...navigationStack];
+      newStack.pop();
+      const previousTab = newStack[newStack.length - 1];
+      setNavigationStack(newStack);
+      setActiveTab(previousTab);
+      window.history.back();
+    } else {
+      // At root, show exit confirmation
+      if (confirm("আপনি কি অ্যাপ থেকে বের হয়ে যেতে চান?")) {
+        window.close();
+      }
+    }
+  };
   const [packs, setPacks] = useState<DataPack[]>(INITIAL_PACKS);
   const [orders, setOrders] = useState<Order[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -329,6 +349,101 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState<any | null>(null);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalMessage, setAuthModalMessage] = useState('');
+
+  // Initialize OneSignal Push Notifications
+  useEffect(() => {
+    const userPhone = currentUser?.phone || currentUser?.uid || '';
+    initOneSignal(userPhone);
+  }, [currentUser]);
+
+  // Realtime FCM / Firestore Notification Stream
+  useEffect(() => {
+    try {
+      const q = query(
+        collection(db, 'notifications'),
+        orderBy('createdAt', 'desc'),
+        limit(15)
+      );
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === 'added') {
+            const data = change.doc.data();
+            const userPhone = currentUser?.phone || '';
+            const userUid = currentUser?.uid || '';
+            const isForMe = !data.targetUser || data.targetUser === 'all' || data.targetUser === userPhone || data.targetUser === userUid;
+
+            if (isForMe && data.title) {
+              const notifTime = new Date(data.createdAt).getTime();
+              // Alert for recent notifications within last 2 minutes
+              if (!isNaN(notifTime) && Math.abs(Date.now() - notifTime) < 120000) {
+                showToast(`🔔 ${data.title}: ${data.body || ''}`, 'info');
+              }
+            }
+          }
+        });
+      }, (err) => {
+        console.warn('Realtime notification listener warning:', err);
+      });
+      return () => unsubscribe();
+    } catch (e) {
+      console.warn('Error attaching realtime notification listener:', e);
+    }
+  }, [currentUser]);
+
+  // Notification Prompt Modal state
+  const [showNotifPrompt, setShowNotifPrompt] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission === 'default' && !sessionStorage.getItem('fcm_prompt_dismissed')) {
+        const timer = setTimeout(() => {
+          setShowNotifPrompt(true);
+        }, 800);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, []);
+
+  const handleCloseNotifPrompt = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('fcm_prompt_dismissed', 'true');
+    }
+    setShowNotifPrompt(false);
+  }, []);
+
+  const handleCloseAuthModal = useCallback(() => {
+    setAuthModalOpen(false);
+    setAuthModalMessage('');
+  }, []);
+
+  const handleLoginSuccess = useCallback((isUserAdmin: boolean) => {
+    // Force isAdmin update based on the flag passed from AuthModal
+    setIsAdmin(isUserAdmin);
+    
+    // We still update local storage if user info is available, but prioritize the admin flag
+    const localUserStr = localStorage.getItem('fahim_local_user');
+    if (localUserStr) {
+      try {
+        const parsedLocalUser = JSON.parse(localUserStr);
+        setCurrentUser({ ...parsedLocalUser, role: isUserAdmin ? 'admin' : parsedLocalUser.role });
+        
+        // Request OneSignal Subscription for logged in user
+        if (parsedLocalUser.phone) {
+          initOneSignal(parsedLocalUser.phone);
+        }
+      } catch (e) {
+        console.error('Error parsing local user:', e);
+      }
+    }
+
+    // Trigger Notification Popup Modal on login if permission not granted
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
+      sessionStorage.removeItem('fcm_prompt_dismissed');
+      setTimeout(() => {
+        setShowNotifPrompt(true);
+      }, 500);
+    }
+  }, []);
 
   const handleSetActiveTab = (tab: 'homepage' | 'store' | 'builder' | 'tracking' | 'admin') => {
     if (tab === 'builder' || tab === 'tracking') {
@@ -632,7 +747,7 @@ export default function App() {
               ...userData
             });
             
-            if (userData.role === 'admin') {
+            if (userData.role === 'admin' || user.email === 'free122055@gmail.com') {
               setIsAdmin(true);
             }
           }
@@ -641,9 +756,15 @@ export default function App() {
         });
 
         // 3. Initial checks based on email
+        const adminPhones = ['01618599077', '01764346995'];
+        console.log('DEBUG: User logged in. Email:', user.email);
+        
         let isUserAdmin = user.email === '01618599077@fahim-internet.com' || 
                           user.email === '01764346995@fahim-internet.com' || 
-                          user.email === 'free122055@gmail.com';
+                          user.email === 'free122055@gmail.com' ||
+                          (user.email && user.email.split('@')[0] && adminPhones.includes(user.email.split('@')[0]));
+        
+        console.log('DEBUG: isUserAdmin check result:', isUserAdmin);
         
         if (isUserAdmin) setIsAdmin(true);
 
@@ -776,6 +897,8 @@ export default function App() {
               // Create the final order in Firestore
               try {
                 await setDoc(doc(db, 'orders', orderId), finalOrder);
+                // Trigger Payment Push Notification
+                triggerPaymentNotification(pendingOrder.customerPhone || pendingOrder.userId || 'all');
               } catch (fsErr) {
                 console.warn('Firestore setDoc final order failed due to Quota/Error:', fsErr);
                 setIsQuotaExceeded(true);
@@ -819,6 +942,8 @@ export default function App() {
                 .then(rechargeRes => {
                   console.log('⚡ Instant TopUp API Response:', rechargeRes);
                   if (rechargeRes.success) {
+                    // Trigger Recharge Push Notification
+                    triggerRechargeNotification(pendingOrder.customerPhone || pendingOrder.userId || 'all');
                     try {
                       setDoc(doc(db, 'orders', orderId), {
                         status: 'completed',
@@ -1634,7 +1759,7 @@ export default function App() {
         {activeTab === 'builder' && (
           <div className="h-full overflow-y-auto bg-slate-50 p-4">
             <button 
-              onClick={() => navigateTo('homepage')} 
+              onClick={handleBack} 
               className="px-4 py-2 bg-slate-900 text-white rounded-xl font-bold text-xs mb-4 flex items-center gap-2 cursor-pointer border-none shadow-xs"
             >
               ← অ্যাপে ফিরে যান
@@ -1650,7 +1775,7 @@ export default function App() {
         {activeTab === 'tracking' && (
           <div className="h-full overflow-y-auto bg-slate-50 p-4">
             <button 
-              onClick={() => navigateTo('homepage')} 
+              onClick={handleBack} 
               className="px-4 py-2 bg-slate-900 text-white rounded-xl font-bold text-xs mb-4 flex items-center gap-2 cursor-pointer border-none shadow-xs"
             >
               ← অ্যাপে ফিরে যান
@@ -1662,7 +1787,7 @@ export default function App() {
                 setAuthModalMessage(msg || '');
                 setAuthModalOpen(true);
               }}
-              onNavigateToHome={() => navigateTo('homepage')}
+              onNavigateToHome={handleBack}
             />
           </div>
         )}
@@ -1672,7 +1797,7 @@ export default function App() {
           <div className="h-full overflow-y-auto bg-slate-100 p-4">
             <div className="max-w-7xl mx-auto space-y-4">
               <button 
-                onClick={() => navigateTo('homepage')} 
+                onClick={handleBack} 
                 className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl font-bold text-xs flex items-center gap-2 cursor-pointer border-none shadow-sm transition-all"
               >
                 ← সফটওয়্যার ড্যাশবোর্ডে ফিরে যান
@@ -1692,7 +1817,7 @@ export default function App() {
                 onAddWifiPack={handleAddWifiPack}
                 onDeleteWifiPack={handleDeleteWifiPack}
                 isAdmin={isAdmin}
-                onBackToHome={() => navigateTo('homepage')}
+                onBackToHome={handleBack}
               />
             </div>
           </div>
@@ -1700,7 +1825,7 @@ export default function App() {
 
         {/* VIEW 5: PRIVACY POLICY */}
         {activeTab === 'privacy' && (
-          <PrivacyPolicy onClose={() => navigateTo('homepage')} />
+          <PrivacyPolicy onClose={handleBack} />
         )}
       </main>
 
@@ -1718,29 +1843,11 @@ export default function App() {
       {/* AUTHENTICATION POPUP MODAL */}
       <AuthModal 
         isOpen={authModalOpen} 
-        onClose={() => {
-          setAuthModalOpen(false);
-          setAuthModalMessage('');
-        }}
+        onClose={handleCloseAuthModal}
         message={authModalMessage}
         settings={settings}
-        onLoginSuccess={(isUserAdmin) => {
-          const localUserStr = localStorage.getItem('fahim_local_user');
-          if (localUserStr) {
-            try {
-              const parsedLocalUser = JSON.parse(localUserStr);
-              setCurrentUser(parsedLocalUser);
-              setIsAdmin(isUserAdmin || parsedLocalUser.role === 'admin');
-            } catch (e) {
-              console.warn('Error reading local user on success:', e);
-            }
-          }
-          if (isUserAdmin) {
-            navigateTo('admin');
-          } else {
-            navigateTo('homepage');
-          }
-        }}
+        onLoginSuccess={handleLoginSuccess}
+        showToast={showToast}
       />
 
       {/* ZINIPAY AUTO-VERIFICATION SCREEN OVERLAY */}
@@ -2349,6 +2456,13 @@ export default function App() {
           </div>
         </div>
       )}
+
+      <NotificationPromptModal
+        isOpen={showNotifPrompt}
+        onClose={handleCloseNotifPrompt}
+        userId={currentUser?.phone || currentUser?.uid}
+        showToast={showToast}
+      />
 
       <Toast 
         message={toast.message}

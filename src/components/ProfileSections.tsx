@@ -10,6 +10,7 @@ import {
 import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase';
 import { collection, query, where, getDocs, getDoc, orderBy, addDoc, updateDoc, doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
+import { requestFcmToken, sendLocalNotification } from '../lib/fcmService';
 import { Order, SiteSettings } from '../types';
 import { BKashLogo, NagadLogo, RocketLogo, UpayLogo, CellfinLogo, BankingLogo } from './BrandLogos';
 
@@ -982,47 +983,216 @@ export function Tickets({ userId, showToast }: SectionProps) {
   );
 }
 
-// 9. FAQ
+// 9. FAQ & Comprehensive Guide
 export function Faq({ userId }: SectionProps) {
   const [openIdx, setOpenIdx] = useState<number | null>(0);
+  const [searchTerm, setSearchTerm] = useState('');
 
-  const faqs = [
+  const detailedFaqs = [
     {
-      q: 'কিভাবে মোবাইল রিচার্জ অফার ক্রয় করবো?',
-      a: 'হোম পেজ থেকে আপনার সিম অপারেটর বেছে নিন, পছন্দের প্যাক নির্বাচন করুন, আপনার মোবাইল নম্বর ও পিন কোড প্রদান করে সাবমিট করুন।'
+      title: '⚠️ গুরুত্বপূর্ণ নীতিমালা ও দায়মুক্তি ঘোষণা (Important Policies & Disclaimer)',
+      category: 'policy',
+      icon: '🛡️',
+      security: 'সর্বোচ্চ আইনি সুরক্ষা ও নীতিমালা',
+      content: `১. ভুল রিচার্জ বা ভুল পেমেন্ট নীতি: গ্রাহক যদি রিচার্জ করার সময় ভুল মোবাইল নম্বর বা ভুল পেমেন্ট অ্যাকাউন্ট (যেমন: ভুল বিকাশ/নগদ নম্বর বা ভুল ট্রানজেকশন আইডি) প্রদান করেন, তবে তার সম্পূর্ণ দায় গ্রাহকের নিজের থাকবে। এই ভুলের কারণে কোনো আর্থিক ক্ষতি হলে "ফাহিম ইন্টারনেট" কর্তৃপক্ষ বা প্ল্যাটফর্ম কোনোভাবেই দায়ী থাকবে না। তাই রিচার্জ বা পেমেন্ট সাবমিট করার আগে নম্বর ও পরিমাণ ভালোভাবে যাচাই করে নিন।
+
+২. টেকনিক্যাল সমস্যা ও ২৪ ঘণ্টা রিফান্ড নীতি: যদি কোনো অফার বা রিচার্জ অপারেটর সার্ভার ডাউন বা টেকনিক্যাল সমস্যার কারণে নির্দিষ্ট সময়ে না পৌঁছায় বা ব্যর্থ হয়, তবে গ্রাহকের পেমেন্ট করা সম্পূর্ণ টাকা কোনো কাটা ছাড়াই পরবর্তী ২৪ ঘণ্টার মধ্যে স্বয়ংক্রিয়ভাবে (Auto Add) তার মূল অ্যাকাউন্ট বা ওয়ালেটের ব্যালেন্সে ফেরত (Refund) দেওয়া হবে।`
     },
     {
-      q: 'এড মানি করার পর কতক্ষণে টাকা যোগ হয়?',
-      a: 'আমাদের অটো-এড মানি সিস্টেমে সঠিক ট্রানজেকশন আইডি প্রদান করলে ১ থেকে ৩ মিনিটের মধ্যে ব্যালেন্স স্বয়ংক্রিয়ভাবে যোগ হয়ে যায়।'
+      title: '১. ইন্টারনেট প্যাক (Internet Pack)',
+      category: 'features',
+      icon: '🌐',
+      security: 'এনক্রিপ্টেড ডাটা ও নিরাপদ সার্ভার',
+      content: `কিভাবে কাজ করে: হোম পেজ বা স্টোর থেকে আপনার পছন্দের অপারেটর (যেমন: জিপি, রবি, বাংলালিংক, এয়ারটেল) সিলেক্ট করুন। এরপর আপনার প্রয়োজনীয় এমবি প্যাক (যেমন: ১ জিবি থেকে ১০০ জিবি) বেছে নিন। পেমেন্ট সম্পন্ন করার সাথে সাথে সিস্টেম অটোমেটিক আপনার নম্বরে ইন্টারনেট প্যাক পাঠিয়ে দেয়।
+নিরাপত্তা স্তর: প্রতিটি ইন্টারনেট প্যাক ক্রয়ের লেনদেন SSL এনক্রিপশন এবং ফায়ারওয়াল দ্বারা সুরক্ষিত। কোনো তথ্য তৃতীয় পক্ষের কাছে প্রকাশ করা হয় না.`
     },
     {
-      q: 'ভুল নম্বরে রিচার্জ হয়ে গেলে কি করণীয়?',
-      a: 'রিচার্জ প্রসেস সম্পূর্ণ হওয়ার পূর্বে হেল্পলাইন বা লাইভ চ্যাটে সাথে সাথে ট্রানজেকশন আইডি সহ যোগাযোগ করুন।'
+      title: '২. মিনিট প্যাক (Minute Pack)',
+      category: 'features',
+      icon: '📞',
+      security: 'হাইজিনিক টকটাইম প্রসেসিং',
+      content: `কিভাবে কাজ করে: যেকোনো অপারেটরের টকটাইম বা মিনিট বান্ডেল (যেমন: ৫০ মিনিট থেকে ১০০০ মিনিট) কম খরচে কেনার জন্য এই সেকশন ব্যবহার করা হয়। নির্দিষ্ট মিনিট প্যাক সিলেক্ট করে আপনার মোবাইল নম্বর দিলেই সিস্টেম দ্রুত প্রসেস করে।
+নিরাপত্তা স্তর: অপারেটর গেটওয়ের সাথে সরাসরি সুরক্ষিত এপিআই (API) কানেকশনের মাধ্যমে টকটাইম প্রদান করা হয়.`
     },
     {
-      q: 'ড্রাইভ প্যাক অফার ক্যানসেল হলে টাকা ফেরত পাবো?',
-      a: 'হ্যাঁ, কোনো অফার অপারেটর থেকে ক্যানসেল হলে সম্পূর্ণ টাকা তাৎক্ষণিক আপনার মূল অ্যাকাউন্টে রিফান্ড হবে।'
+      title: '৩. মোবাইল রিচার্জ (Mobile Recharge)',
+      category: 'features',
+      icon: '📱',
+      security: 'রিয়েল-টাইম ফ্লেক্সিলোড সিকিউরিটি',
+      content: `কিভাবে কাজ করে: সাধারণ ফ্লেক্সিলোড বা ইনস্ট্যান্ট রিচার্জের জন্য এই অপশন। আপনার যেকোনো প্রিপেইড বা পোস্টপেইড নম্বরে তাৎক্ষণিক ব্যালেন্স রিচার্জ করতে পারবেন।
+নিরাপত্তা স্তর: পিন ভেরিফিকেশন এবং ওটিপি (OTP) প্রটেকশনের মাধ্যমে আপনার রিচার্জ অ্যাকাউন্ট সম্পূর্ণ সুরক্ষিত থাকে.`
+    },
+    {
+      title: '৪. স্পেশাল অফার (Special Offer)',
+      category: 'features',
+      icon: '🔥',
+      security: 'ভেরিফাইড ড্রাইভ অফার সিস্টেম',
+      content: `কিভাবে কাজ করে: অপারেটরদের সীমিত সময়ের বিশেষ ড্রাইভ প্যাক এবং ডিসকাউন্ট অফারগুলো এখানে পাওয়া যায়। সাধারণ বাজারের তুলনায় অনেক কম মূল্যে বেশি ইন্টারনেট ও মিনিট উপভোগ করা যায়।
+নিরাপত্তা স্তর: প্রতিটি অফার অফিশিয়াল চ্যানেল থেকে ভেরিফাই করা এবং সম্পূর্ণ জেনুইন.`
+    },
+    {
+      title: '৫. ক্যাশব্যাক (Cashback)',
+      category: 'features',
+      icon: '✨',
+      security: 'স্বয়ংক্রিয় ক্যাশব্যাক হিসাব',
+      content: `কিভাবে কাজ করে: নির্দিষ্ট প্যাক বা অফার ক্রয়ের পর কোম্পানি থেকে নির্ধারিত ক্যাশব্যাক সরাসরি আপনার ওয়ালেটে জমা হয়। এই টাকা পরবর্তীতে অন্য প্যাক কিনতে ব্যবহার করা যায়।
+নিরাপত্তা স্তর: ক্যাশব্যাক ট্রানজেকশনগুলো সেন্ট্রাল ডাটাবেজে পার্মানেন্টলি রেকর্ড থাকে, যা কখনো হারায় না.`
+    },
+    {
+      title: '৬. বান্ডেল প্যাক (Bundle Pack)',
+      category: 'features',
+      icon: '📦',
+      security: 'কম্বো ভেরিফিকেশন প্রটেকশন',
+      content: `কিভাবে কাজ করে: ইন্টারনেট এবং মিনিট একত্রে বান্ডেল আকারে কেনার জন্য এই সেকশন। একটিমাত্র প্যাক কিনে একই সাথে এমবি এবং টকটাইম উভয় সুবিধা পাওয়া যায়।
+নিরাপত্তা স্তর: ডুয়াল ভেরিফিকেশন প্রটোকলের মাধ্যমে প্যাক ডেলিভারি নিশ্চিত করা হয়.`
+    },
+    {
+      title: '৭. ফ্যামিলি প্যাক (Family Pack)',
+      category: 'features',
+      icon: '👨‍👩‍👧‍👦',
+      security: 'গ্রুপ মেম্বার এক্সেস কন্ট্রোল',
+      content: `কিভাবে কাজ করে: পরিবারের সকল সদস্যের ইন্টারনেট ও রিচার্জ খরচ এক অ্যাকাউন্ট থেকে পরিচালনা করার জন্য ফ্যামিলি প্যাক অত্যন্ত উপযোগী।
+নিরাপত্তা স্তর: অ্যাডমিন পারমিশন ও পাসওয়ার্ড প্রটেকশন ছাড়া পরিবারের অন্য কেউ ব্যালেন্স ব্যবহার করতে পারে না.`
+    },
+    {
+      title: '৮. সাপোর্ট টিম (Support Team)',
+      category: 'features',
+      icon: '🎧',
+      security: '২৪/৭ ডেডিকেটেড হেল্পলাইন',
+      content: `কিভাবে কাজ করে: যেকোনো সমস্যায় সরাসরি আমাদের সাপোর্ট টিমের সাথে যোগাযোগ করতে পারেন। হটলাইন কল, হোয়াটসঅ্যাপ লাইভ চ্যাট অথবা ইমেইলের মাধ্যমে তাৎক্ষণিক সমাধান দেওয়া হয়।
+নিরাপত্তা স্তর: আপনার প্রাইভেসির গোপনীয়তা বজায় রেখে সমস্ত কথোপকথন এনক্রিপ্টেড থাকে.`
+    },
+    {
+      title: '৯. অফার (Offers)',
+      category: 'features',
+      icon: '🎁',
+      security: 'লাইভ অফার ফিল্টারিং',
+      content: `কিভাবে কাজ করে: সমস্ত অপারেটরের সেরা এবং актуальные অফারগুলো এক নজরে দেখার ও ফিল্টার করার ডিজিটাল ক্যাটালগ। অপারেটর ও ক্যাটাগরি অনুযায়ী পছন্দসই অফার বেছে নেওয়া যায়।
+নিরাপত্তা স্তর: প্রতিদিন স্বয়ংক্রিয়ভাবে অফার লিস্ট আপডেট হয়, কোনো ভুয়া বা মেয়াউত্তীর্ণ অফার থাকে না.`
+    },
+    {
+      title: '১০. অর্ডার ট্র্যাকিং (Order Tracking)',
+      category: 'features',
+      icon: '🔍',
+      security: 'রিয়েল-টাইম অর্ডার স্ট্যাটাস',
+      content: `কিভাবে কাজ করে: আপনি যে অফার বা রিচার্জ অর্ডার করেছেন, তার বর্তমান অবস্থা (পেন্ডিং, প্রসেসিং, সফল বা বাতিল) ট্র্যাকিং আইডি দিয়ে লাইভ দেখতে পারবেন।
+নিরাপত্তা স্তর: প্রতিটি অর্ডারের ইউনিক ট্রানজেকশন আইডি এবং সিক্রেট টোকেন থাকে.`
+    },
+    {
+      title: '১১. মেম্বার ভেরিফিকেশন (Member Verification)',
+      category: 'features',
+      icon: '🪪',
+      security: 'উন্নত ডাটা এনক্রিপশন ও ব্যাকআপ',
+      content: `কিভাবে কাজ করে: 
+১. মেম্বার ভেরিফিকেশন সেকশনটি মূলত আপনার ব্যবসার সাথে যুক্ত গ্রাহক, ডিলার বা মেম্বারদের পরিচয় নিশ্চিত ও যাচাই করার জন্য ব্যবহার করা হয়।
+২. এখানে প্রতিটি মেম্বারের সঠিক নাম, মোবাইল নম্বর, এনআইডি (NID) নম্বর, ছবি এবং ঠিকানা যুক্ত করা যায়।
+৩. কোনো মেম্বার নতুন যুক্ত হলে সিস্টেম তাদের একটি ইউনিক আইডি (Unique ID) প্রদান করে।
+৪. এর ফলে ভুয়া কাস্টমার বা ভুল ব্যক্তির কাছে পেমেন্ট বা বাকি যাওয়ার ঝুঁকি থাকে না।
+
+নিয়মকানুন ও সুবিধা:
+• সমস্ত মেম্বার ইনফরমেশন ক্লাউড ডাটাবেজে অত্যন্ত সুরক্ষিতভাবে এনক্রিপ্টেড আকারে সংরক্ষিত থাকে।
+• অ্যাডমিন বা অনুমোদিত ইউজার ছাড়া কেউ এই সংবেদনশীল তথ্য দেখতে বা পরিবর্তন করতে পারে না।`
+    },
+    {
+      title: '১২. স্মার্ট হিসাব খাতা (Smart Account Ledger)',
+      category: 'features',
+      icon: '📒',
+      security: 'ব্যবসায়িক ডাটা সিকিউরিটি',
+      content: `কিভাবে কাজ করে: 
+১. স্মার্ট হিসাব খাতা হলো দোকানের বা ব্যবসার বাকি, লেনদেন এবং কাস্টমার অ্যাকাউন্ট নির্ভুলভাবে রাখার ডিজিটাল খাতা।
+২. "নতুন কাস্টমার" অপশন থেকে কাস্টমার যোগ করার পর তাকে কত টাকা "ধার দিলেন" এবং সে আপনাকে কত টাকা "নগদ বা বিকাশে শোধ দিল" (টাকা নিন) তা এন্ট্রি করতে হয়।
+৩. সিস্টেম স্বয়ংক্রিয়ভাবে হিসাব করে বর্তমান মোট বাকি (Current Due) স্ক্রিনে দেখিয়ে দেয়।
+
+নিয়মকানুন ও নিরাপত্তা:
+• সরাসরি ব্যালেন্স বা বাকি এডিট করা যায় না; শুধুমাত্র "ধার দিন" ও "টাকা নিন" ট্রানজ্যাকশন এন্ট্রি করার মাধ্যমেই ব্যালেন্স পরিবর্তিত হয়।
+• ভুলবশত কোনো ট্রানজ্যাকশন ডিলিট হলে তা চিরতরে মুছে না গিয়ে 'নিরাপত্তা' সেকশনের ট্র্যাশে জমা থাকে, যেখান থেকে রিস্টোর করা যায়।`
+    },
+    {
+      title: '১৩. অ্যাড মানি (Add Money)',
+      category: 'features',
+      icon: '💳',
+      security: 'ব্যাংক-গ্রেড পেমেন্ট গেটওয়ে সিকিউরিটি',
+      content: `কিভাবে কাজ করে: বিকাশ, নগদ, রকেট, উপায় অথবা ব্যাংক ট্রান্সফারের মাধ্যমে আপনার অ্যাপ ওয়ালেটে ব্যালেন্স যুক্ত করার নিরাপদ মাধ্যম। সঠিক ট্রানজেকশন আইডি দিলে মুহূর্তেই ব্যালেন্স অ্যাড হয়।
+নিরাপত্তা স্তর: জিপিপি (SSL/TLS) এনক্রিপ্টেড পেমেন্ট প্রোটোকল এবং ম্যানুয়াল ভেরিফিকেশন সিস্টেম দ্বারা সম্পূর্ণ নিরাপদ.`
     }
   ];
 
+  const filteredFaqs = detailedFaqs.filter(item => 
+    item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.content.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
-    <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
-      {faqs.map((item, idx) => (
-        <div key={idx} className="border border-slate-200 rounded-xl bg-slate-50 overflow-hidden">
-          <button 
-            onClick={() => setOpenIdx(openIdx === idx ? null : idx)}
-            className="w-full p-3 text-left font-extrabold text-xs text-slate-900 flex justify-between items-center bg-none border-none cursor-pointer"
-          >
-            <span>{item.q}</span>
-            {openIdx === idx ? <ChevronUp className="w-4 h-4 text-emerald-600" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
-          </button>
-          {openIdx === idx && (
-            <div className="p-3 pt-0 text-[11px] text-slate-600 leading-relaxed border-t border-slate-100 bg-white">
-              {item.a}
+    <div className="space-y-4 max-h-[75vh] overflow-y-auto pr-1 animate-in fade-in duration-300">
+      {/* Banner */}
+      <div className="bg-gradient-to-r from-emerald-800 via-emerald-700 to-teal-800 p-4 rounded-2xl text-white shadow-sm space-y-1">
+        <h3 className="text-sm font-black flex items-center gap-2">
+          <span>📖 সাহায্য ও নির্দেশিকা (Help / FAQ & Guide)</span>
+        </h3>
+        <p className="text-[11px] text-emerald-100/90 font-medium leading-relaxed">
+          ফাহিম ইন্টারনেটের প্রতিটি ফিচার, পলিসি এবং নিয়মকানুন খুব সহজে নিচে বিস্তারিত দেওয়া হলো। যিনি জীবনে প্রথমবার মোবাইল ব্যবহার করছেন, তিনিও পড়ে সহজে বুঝতে পারবেন।
+        </p>
+      </div>
+
+      {/* Search Bar */}
+      <div className="relative">
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="কোন বিষয়ে জানতে চান? এখানে সার্চ করুন..."
+          className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none focus:border-emerald-500 focus:bg-white shadow-inner"
+        />
+        <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+      </div>
+
+      {/* FAQ Items List */}
+      <div className="space-y-2.5">
+        {filteredFaqs.map((item, idx) => {
+          const isOpen = openIdx === idx;
+          const isPolicy = item.category === 'policy';
+
+          return (
+            <div 
+              key={idx} 
+              className={`border rounded-2xl overflow-hidden transition-all shadow-2xs ${
+                isPolicy 
+                  ? 'bg-amber-50/70 border-amber-300' 
+                  : 'bg-white border-slate-200/90 hover:border-emerald-300'
+              }`}
+            >
+              <button 
+                type="button"
+                onClick={() => setOpenIdx(isOpen ? null : idx)}
+                className={`w-full p-3.5 text-left font-black text-xs flex justify-between items-center gap-3 cursor-pointer transition-colors ${
+                  isPolicy ? 'text-amber-950 bg-amber-100/60' : 'text-slate-900 bg-slate-50/50 hover:bg-slate-50'
+                }`}
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span className="text-base shrink-0">{item.icon}</span>
+                  <span className="truncate">{item.title}</span>
+                </div>
+                {isOpen ? <ChevronUp className="w-4 h-4 text-emerald-600 shrink-0" /> : <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />}
+              </button>
+
+              {isOpen && (
+                <div className="p-4 space-y-3 bg-white border-t border-slate-100 text-xs text-slate-700 leading-relaxed">
+                  {item.content.split('\n\n').map((paragraph, pIdx) => (
+                    <p key={pIdx} className="font-medium">
+                      {paragraph}
+                    </p>
+                  ))}
+
+                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400 font-bold">
+                    <span>সিকিউরিটি লেভেল: {item.security}</span>
+                    <span className="text-emerald-600">১০০% ভেরিফাইড গাইড</span>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
-        </div>
-      ))}
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -1351,36 +1521,93 @@ export function SecuritySettings({ userId }: SectionProps) {
   );
 }
 
-export function NotificationSettings({ userId }: SectionProps) {
-  const [push, setPush] = useState(true);
-  const [sms, setSms] = useState(true);
+export function NotificationSettings({ userId, showToast }: SectionProps) {
+  const [permission, setPermission] = useState<string>('default');
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      setPermission(Notification.permission);
+    }
+  }, []);
+
+  const handleEnablePush = async () => {
+    setLoading(true);
+    try {
+      const token = await requestFcmToken(userId);
+      if (token) {
+        setPermission('granted');
+        showToast?.('🎉 পুশ নোটিফিকেশন সফলভাবে চালু করা হয়েছে!', 'success');
+      } else {
+        if (typeof window !== 'undefined' && 'Notification' in window) {
+          setPermission(Notification.permission);
+        }
+        if (Notification.permission === 'denied') {
+          showToast?.('❌ ব্রাউজার সেটিং থেকে নোটিফিকেশন ব্লক করা রয়েছে। এলাউ (Allow) করুন।', 'error');
+        } else {
+          showToast?.('⚠️ নোটিফিকেশন এলাউ করা হয়নি।', 'info');
+        }
+      }
+    } catch (e) {
+      showToast?.('❌ নোটিফিকেশন চালু করতে সমস্যা হয়েছে।', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTestPush = async () => {
+    try {
+      await sendLocalNotification('🔔 টেস্ট নোটিফিকেশন', 'ফাহিম ইন্টারনেট পুশ নোটিফিকেশন সিস্টেম সফলভাবে কাজ করছে!');
+      showToast?.('🚀 টেস্ট নোটিফিকেশন পাঠানো হয়েছে!', 'success');
+    } catch (e) {
+      showToast?.('❌ টেস্ট নোটিফিকেশন পাঠানো সম্ভব হয়নি।', 'error');
+    }
+  };
 
   return (
-    <div className="space-y-2.5 text-xs">
-      <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
-        <div>
-          <p className="font-extrabold text-slate-900">পুশ নোটিফিকেশন</p>
-          <p className="text-[10px] text-slate-500">বিশেষ অফার ও ডিসকাউন্ট নোটিফিকেশন</p>
+    <div className="space-y-3 text-xs">
+      <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Bell className="w-4 h-4 text-emerald-600" />
+            <div>
+              <p className="font-extrabold text-slate-900">ডিভাইস পুশ নোটিফিকেশন</p>
+              <p className="text-[10px] text-slate-500">স্পেশাল অফার, ডিসকাউন্ট ও রিচার্জ আপডেট</p>
+            </div>
+          </div>
+          <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+            permission === 'granted' 
+              ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' 
+              : permission === 'denied'
+              ? 'bg-rose-100 text-rose-800 border border-rose-200'
+              : 'bg-amber-100 text-amber-800 border border-amber-200'
+          }`}>
+            {permission === 'granted' ? '✅ সচল (Active)' : permission === 'denied' ? '❌ ব্লকড (Blocked)' : '⚠️ নিষ্ক্রিয়'}
+          </span>
         </div>
-        <input 
-          type="checkbox" 
-          checked={push} 
-          onChange={() => setPush(!push)} 
-          className="w-4 h-4 accent-emerald-600 cursor-pointer" 
-        />
+
+        {permission !== 'granted' ? (
+          <button
+            onClick={handleEnablePush}
+            disabled={loading}
+            className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-extrabold rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+          >
+            {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Bell className="w-3.5 h-3.5" />}
+            <span>নোটিফিকেশন অন করুন (Enable Push)</span>
+          </button>
+        ) : (
+          <button
+            onClick={handleTestPush}
+            className="w-full py-2 bg-slate-800 hover:bg-slate-900 active:scale-98 text-white font-extrabold rounded-xl shadow transition-all flex items-center justify-center gap-1.5 cursor-pointer text-[11px]"
+          >
+            <span>🚀 টেস্ট নোটিফিকেশন চেক করুন</span>
+          </button>
+        )}
       </div>
-      <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
-        <div>
-          <p className="font-extrabold text-slate-900">এসএমএস অ্যালার্ট</p>
-          <p className="text-[10px] text-slate-500">রিচার্জ কনফার্মেশন মেসেজ</p>
-        </div>
-        <input 
-          type="checkbox" 
-          checked={sms} 
-          onChange={() => setSms(!sms)} 
-          className="w-4 h-4 accent-emerald-600 cursor-pointer" 
-        />
-      </div>
+
+      <p className="text-[10px] text-slate-400 text-center leading-relaxed font-semibold">
+        স্মার্টফোন ও পিসির নোটিফিকেশন ট্রে-তে অফার ও রিচার্জের স্ট্যাটাস সরাসরি নোটিফিকেশন আকারে ভেসে উঠবে।
+      </p>
     </div>
   );
 }

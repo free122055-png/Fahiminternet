@@ -3,6 +3,7 @@
   "short_name": "FahimInternet",
   "description": "FAHIM INTERNET - সাশ্রয়ী এমবি, মিনিট ও ফাইবার ব্রডব্যান্ড অফার",
   "start_url": "/",
+  "gcm_sender_id": "103953800507",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#16a34a",

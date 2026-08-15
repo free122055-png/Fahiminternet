@@ -1,5 +1,5 @@
 import { initializeApp, getApp, getApps } from 'firebase/app';
-import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth';
+import { getAuth, setPersistence, browserLocalPersistence, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from 'firebase/auth';
 import { initializeFirestore, doc, getDocFromServer, setLogLevel } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 
@@ -69,6 +69,11 @@ try {
 }
 
 export const auth = getAuth(app);
+export const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({
+  prompt: 'select_account'
+});
+export { signInWithPopup };
 
 // Explicitly set persistence for mobile browsers/apps 
 setPersistence(auth, browserLocalPersistence).catch(err => {
@@ -85,7 +90,7 @@ try {
   throw new Error(`Firestore (${appName}) Initialization Error: ` + (e instanceof Error ? e.message : String(e)));
 }
 
-export { db };
+export { app, db };
 
 // Enable offline persistence (disabled by default to prevent multi-tab/iframe locking issues in AI Studio preview environments)
 /*

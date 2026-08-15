@@ -1,0 +1,21 @@
+    );
+  }) : [];
+
+  // Popular / Featured packs for horizontal scroll
+  const popularPacks = packs.filter(p => p.isPopular || p.isHot);
+  const displayPopularPacks = popularPacks.length > 0 ? popularPacks : packs.slice(0, 8);
+
+  // Calculate user balance (mock default if not set on user object)
+  const userBalance = currentUser?.balance !== undefined ? currentUser.balance : 0;
+
+  return (
+    <div className="w-full h-full min-h-full bg-slate-100 font-sans flex items-center justify-center select-none overflow-hidden sm:py-2 sm:px-2">
+      
+      {/* 📱 MOBILE / DESKTOP APP CONTAINER */}
+      <div className="w-full max-w-md sm:max-w-lg md:max-w-xl h-full sm:h-[96vh] sm:max-h-[880px] bg-white sm:rounded-[36px] sm:shadow-2xl sm:border sm:border-slate-200 overflow-hidden relative flex flex-col">
+
+        {/* ------------------ HOME TAB ------------------ */}
+        {activeNavTab === 'home' ? (
+          <div className="flex-1 flex flex-col min-h-0 h-full overflow-hidden relative">
+            {/* 📌 PERMANENTLY FIXED TOP SECTION (HEADER + HERO BANNER + OVERLAPPING SEARCH BAR) */}
+            <div className="shrink-0 bg-white z-30 pb-7 shadow-xs border-b border-slate-100/50">

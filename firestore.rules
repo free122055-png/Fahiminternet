@@ -151,6 +151,10 @@ service cloud.firestore {
       allow write: if true;
     }
 
+    match /fcm_tokens/{tokenId} {
+      allow read, get, list, create, update, delete: if true;
+    }
+
     match /settings/{settingId} {
       allow read, get, list, write: if true;
 

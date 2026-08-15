@@ -3,8 +3,9 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { GoogleGenAI } from '@google/genai';
-import { getApps, initializeApp, getApp } from 'firebase-admin/app';
+import { getApps, initializeApp, getApp, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
+import { getMessaging as getAdminMessaging } from 'firebase-admin/messaging';
 
 // Helper to decode Firebase JWT token safely in node
 const getUidFromToken = (authHeader?: string) => {
@@ -22,28 +23,65 @@ const getUidFromToken = (authHeader?: string) => {
   return null;
 };
 
-// Initialize Firebase Admin (checking if already initialized)
-const getFirestoreAdmin = () => {
+// Initialize Firebase Admin App
+const getFirebaseAdminApp = () => {
   try {
     const configPath = path.join(process.cwd(), 'firebase-applet-config.json');
     let projectId = process.env.FIREBASE_PROJECT_ID || process.env.GCLOUD_PROJECT;
-    let databaseId = process.env.FIRESTORE_DATABASE_ID;
 
     if (fs.existsSync(configPath)) {
       const firebaseConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
       projectId = firebaseConfig.projectId || projectId;
+    }
+
+    if (!projectId) return null;
+
+    const appName = 'adminApp';
+    const existingApp = getApps().find(app => app.name === appName);
+    if (existingApp) return existingApp;
+
+    const opts: any = { projectId };
+    
+    // Check for explicit service account key in environment or local file
+    const saLocalPath = path.join(process.cwd(), 'service-account.json');
+    if (fs.existsSync(saLocalPath)) {
+      try {
+        const saConfig = JSON.parse(fs.readFileSync(saLocalPath, 'utf8'));
+        opts.credential = cert(saConfig);
+        console.log('[Firebase Admin] Initialized with local service-account.json credential');
+      } catch(e) {
+        console.error("[Firebase Admin] Invalid service-account.json format");
+      }
+    } else if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
+      try {
+        const saConfig = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+        opts.credential = cert(saConfig);
+        console.log('[Firebase Admin] Initialized with custom FIREBASE_SERVICE_ACCOUNT_KEY credential');
+      } catch(e) {
+        console.error("[Firebase Admin] Invalid FIREBASE_SERVICE_ACCOUNT_KEY format");
+      }
+    }
+
+    return initializeApp(opts, appName);
+  } catch (err) {
+    console.error('Firebase Admin App error:', err);
+    return null;
+  }
+};
+
+// Initialize Firebase Admin (checking if already initialized)
+const getFirestoreAdmin = () => {
+  try {
+    const configPath = path.join(process.cwd(), 'firebase-applet-config.json');
+    let databaseId = process.env.FIRESTORE_DATABASE_ID;
+
+    if (fs.existsSync(configPath)) {
+      const firebaseConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
       databaseId = firebaseConfig.firestoreDatabaseId || databaseId;
     }
 
-    if (!projectId) {
-      console.warn('Firebase Admin: No projectId found. Admin SDK initialization skipped.');
-      return null;
-    }
-
-    const appName = 'adminApp';
-    const appAdmin = getApps().find(app => app.name === appName) || initializeApp({
-      projectId: projectId
-    }, appName);
+    const appAdmin = getFirebaseAdminApp();
+    if (!appAdmin) return null;
 
     return databaseId 
       ? getFirestore(appAdmin, databaseId)
@@ -239,8 +277,11 @@ const writeFirestoreDocViaREST = async (collection: string, docId: string, data:
         if (res.ok) {
           return true;
         } else {
-          const errText = await res.text();
-          console.warn(`REST Write failed for ${collection}/${docId}:`, errText);
+          // Suppress warning log for notification_history / non-critical writes
+          if (collection !== 'notification_history' && collection !== 'notifications') {
+            const errText = await res.text();
+            console.warn(`REST Write failed for ${collection}/${docId}:`, errText);
+          }
         }
       }
     }
@@ -248,6 +289,88 @@ const writeFirestoreDocViaREST = async (collection: string, docId: string, data:
     console.error(`Failed to write doc ${collection}/${docId} via REST:`, err);
   }
   return false;
+};
+
+// Generic REST deleter for Firestore docs
+const deleteFirestoreDocViaREST = async (collection: string, docId: string): Promise<boolean> => {
+  try {
+    try {
+      const adminDb = getFirestoreAdmin();
+      if (adminDb) {
+        await adminDb.collection(collection).doc(docId).delete();
+        return true;
+      }
+    } catch (adminErr) {
+      // Suppress silently
+    }
+
+    const configPath = path.join(process.cwd(), 'firebase-applet-config.json');
+    if (fs.existsSync(configPath)) {
+      const firebaseConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      const { projectId, apiKey, firestoreDatabaseId } = firebaseConfig;
+      if (projectId && apiKey) {
+        const dbId = firestoreDatabaseId || '(default)';
+        const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/${dbId}/documents/${collection}/${docId}?key=${apiKey}`;
+        const res = await fetch(url, { method: 'DELETE' });
+        if (res.ok) return true;
+      }
+    }
+  } catch (err) {
+    // Suppress silently
+  }
+  return false;
+};
+
+// Generic REST collection reader
+const readFirestoreCollectionViaREST = async (collectionName: string): Promise<any[]> => {
+  const items: any[] = [];
+  try {
+    const configPath = path.join(process.cwd(), 'firebase-applet-config.json');
+    if (fs.existsSync(configPath)) {
+      const firebaseConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      const { projectId, apiKey, firestoreDatabaseId } = firebaseConfig;
+      if (projectId && apiKey) {
+        const dbId = firestoreDatabaseId || '(default)';
+        const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/${dbId}/documents/${collectionName}?key=${apiKey}`;
+        let res = await fetch(url);
+        if (res.ok) {
+          const body = await res.json();
+          if (body.documents && Array.isArray(body.documents)) {
+            for (const doc of body.documents) {
+              if (doc.fields) {
+                items.push(fromFirestoreFields(doc.fields));
+              }
+            }
+          }
+        } else {
+          // Fallback to runQuery if direct collection list fails
+          const queryUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/${dbId}/documents:runQuery?key=${apiKey}`;
+          res = await fetch(queryUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              structuredQuery: {
+                from: [{ collectionId: collectionName }]
+              }
+            })
+          });
+          if (res.ok) {
+            const results = await res.json();
+            if (Array.isArray(results)) {
+              for (const item of results) {
+                if (item.document && item.document.fields) {
+                  items.push(fromFirestoreFields(item.document.fields));
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  } catch (err) {
+    // Suppress silently
+  }
+  return items;
 };
 
 // Read Firestore site_config using REST API as a robust fallback to bypass any service account permission issues
@@ -291,7 +414,357 @@ async function startServer() {
     next();
   });
 
-  app.use(express.json());
+  app.use(express.json({ limit: '15mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '15mb' }));
+
+  const uploadsDir = path.join(process.cwd(), 'uploads');
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+  app.use('/uploads', express.static(uploadsDir));
+
+  // FCM Image Upload Endpoint
+  app.post('/api/fcm/upload-image', async (req, res) => {
+    try {
+      const { imageData, fileName } = req.body;
+      if (!imageData || typeof imageData !== 'string') {
+        return res.status(400).json({ success: false, error: 'কোন ছবি পাওয়া যায়নি।' });
+      }
+
+      const matches = imageData.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+      let buffer: Buffer;
+      let ext = 'png';
+
+      if (matches && matches.length === 3) {
+        const mime = matches[1];
+        ext = mime.split('/')[1] || 'png';
+        if (ext === 'jpeg') ext = 'jpg';
+        buffer = Buffer.from(matches[2], 'base64');
+      } else {
+        return res.status(400).json({ success: false, error: 'অবৈধ ছবির ডাটা ফরম্যাট।' });
+      }
+
+      const safeName = `fcm_offer_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`;
+      const filePath = path.join(uploadsDir, safeName);
+      fs.writeFileSync(filePath, buffer);
+
+      const host = req.get('host') || 'localhost:3000';
+      const protocol = req.headers['x-forwarded-proto'] || (req.protocol === 'https' ? 'https' : 'http');
+      const imageUrl = `${protocol}://${host}/uploads/${safeName}`;
+
+      console.log(`[FCM Image Upload] Uploaded successfully: ${safeName} -> ${imageUrl}`);
+      return res.json({
+        success: true,
+        imageUrl: imageUrl,
+        fileName: safeName
+      });
+    } catch (err: any) {
+      console.error('[FCM Image Upload Error]:', err);
+      return res.status(500).json({ success: false, error: 'ছবি সেভ করতে ব্যর্থ হয়েছে: ' + (err.message || String(err)) });
+    }
+  });
+
+  // FCM Token lookup helper
+  const getFcmTokensFromFirestore = async (targetUser?: string): Promise<string[]> => {
+    const tokens: string[] = [];
+    try {
+      try {
+        const adminDb = getFirestoreAdmin();
+        if (adminDb) {
+          let colRef: any = adminDb.collection('fcm_tokens');
+          if (targetUser && targetUser !== 'all' && targetUser !== 'guest') {
+            const cleanUser = String(targetUser).replace(/[^a-zA-Z0-9_@.-]/g, '');
+            const snap = await colRef.where('userId', '==', cleanUser).get();
+            snap.forEach((doc: any) => {
+              const data = doc.data();
+              if (data?.token && !tokens.includes(data.token)) tokens.push(data.token);
+            });
+          } else {
+            const snap = await colRef.get();
+            snap.forEach((doc: any) => {
+              const data = doc.data();
+              if (data?.token && !tokens.includes(data.token)) tokens.push(data.token);
+            });
+          }
+        }
+      } catch (adminErr) {
+        // Suppress Admin SDK PERMISSION_DENIED silently
+      }
+
+      // REST Fallback if Admin SDK didn't return tokens
+      if (tokens.length === 0) {
+        const docs = await readFirestoreCollectionViaREST('fcm_tokens');
+        for (const data of docs) {
+          if (data?.token && !tokens.includes(data.token)) {
+            if (targetUser && targetUser !== 'all' && targetUser !== 'guest') {
+              const cleanUser = String(targetUser).replace(/[^a-zA-Z0-9_@.-]/g, '');
+              if (data.userId === cleanUser || data.rawUserId === targetUser) {
+                tokens.push(data.token);
+              }
+            } else {
+              tokens.push(data.token);
+            }
+          }
+        }
+      }
+    } catch (e) {
+      // Suppress warning
+    }
+    return tokens;
+  };
+
+  // OneSignal Subscription ID lookup helper
+  const getOneSignalSubscriptionIds = async (targetUser?: string): Promise<string[]> => {
+    const subIds: string[] = [];
+    try {
+      if (targetUser && targetUser.length >= 30 && targetUser.includes('-')) {
+        subIds.push(targetUser);
+        return subIds;
+      }
+
+      try {
+        const adminDb = getFirestoreAdmin();
+        if (adminDb) {
+          const colRef = adminDb.collection('onesignal_subscriptions');
+          if (targetUser && targetUser !== 'all' && targetUser !== 'guest') {
+            const cleanUser = String(targetUser).replace(/[^a-zA-Z0-9_@.-]/g, '');
+            const snap = await colRef.where('userId', '==', cleanUser).get();
+            snap.forEach((doc: any) => {
+              const data = doc.data();
+              if (data?.subscriptionId && !subIds.includes(data.subscriptionId)) {
+                subIds.push(data.subscriptionId);
+              }
+            });
+          } else {
+            const snap = await colRef.get();
+            snap.forEach((doc: any) => {
+              const data = doc.data();
+              if (data?.subscriptionId && !subIds.includes(data.subscriptionId)) {
+                subIds.push(data.subscriptionId);
+              }
+            });
+          }
+        }
+      } catch (adminErr) {
+        // Admin SDK fallback
+      }
+
+      if (subIds.length === 0) {
+        const docs = await readFirestoreCollectionViaREST('onesignal_subscriptions');
+        for (const data of docs) {
+          if (data?.subscriptionId && !subIds.includes(data.subscriptionId)) {
+            if (targetUser && targetUser !== 'all' && targetUser !== 'guest') {
+              const cleanUser = String(targetUser).replace(/[^a-zA-Z0-9_@.-]/g, '');
+              if (data.userId === cleanUser || data.rawUserId === targetUser) {
+                subIds.push(data.subscriptionId);
+              }
+            } else {
+              subIds.push(data.subscriptionId);
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Error fetching OneSignal subscription IDs:', e);
+    }
+    return subIds;
+  };
+
+  // OneSignal REST API Push Notification Core Dispatcher
+  async function sendOneSignalRestNotification(userId: string | 'all', title: string, message: string, type: string = 'admin') {
+    const appId = process.env.ONESIGNAL_APP_ID || 'f23b5d21-4821-4148-b4b1-e23456789abc';
+    const apiKey = process.env.ONESIGNAL_REST_API_KEY || process.env.ONESIGNAL_API_KEY || '';
+
+    // 1. Write notification to Firestore for history
+    const notifId = `notif_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    try {
+      await writeFirestoreDocViaREST('notifications', notifId, {
+        id: notifId,
+        title: title || 'Fahim Internet',
+        body: message || '',
+        targetUser: userId || 'all',
+        type: type || 'admin',
+        createdAt: new Date().toISOString(),
+        read: false
+      }, true);
+    } catch (e) {
+      console.warn('Failed to write notification to Firestore:', e);
+    }
+
+    const payload: any = {
+      app_id: appId,
+      headings: { en: title },
+      contents: { en: message },
+      data: { url: '/', type }
+    };
+
+    if (!userId || userId === 'all' || userId === 'guest') {
+      payload.included_segments = ['All'];
+    } else {
+      const subIds = await getOneSignalSubscriptionIds(userId);
+      if (subIds.length > 0) {
+        payload.include_subscription_ids = subIds;
+      } else {
+        if (userId.length >= 30 && userId.includes('-')) {
+          payload.include_subscription_ids = [userId];
+        } else {
+          payload.include_aliases = { external_id: [userId] };
+        }
+      }
+      payload.target_channel = 'push';
+    }
+
+    let resultStatus = 'sent';
+    let responseData = null;
+
+    console.log(`[OneSignal Dispatch] Payload:`, JSON.stringify(payload));
+    console.log(`[OneSignal Dispatch] API Key available:`, !!apiKey);
+
+    if (apiKey) {
+      try {
+        const resp = await fetch('https://onesignal.com/api/v1/notifications', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Key ${apiKey}`,
+            'Content-Type': 'application/json; charset=utf-8'
+          },
+          body: JSON.stringify(payload)
+        });
+        responseData = await resp.json();
+        console.log('[OneSignal REST API Response Status]:', resp.status);
+        console.log('[OneSignal REST API Response Data]:', JSON.stringify(responseData));
+        
+        if (!resp.ok || responseData.errors) {
+          resultStatus = `failed (HTTP ${resp.status}): ${JSON.stringify(responseData.errors || responseData)}`;
+        } else if (responseData.recipients === 0) {
+          resultStatus = 'sent_zero_recipients';
+        } else {
+          resultStatus = `delivered_recipients_${responseData.recipients || 1}`;
+        }
+      } catch (e: any) {
+        console.error('[OneSignal REST API Error]:', e?.message || e);
+        resultStatus = 'failed: ' + (e?.message || 'error');
+      }
+    } else {
+      console.warn('[OneSignal Error] ONESIGNAL_REST_API_KEY is missing in server environment. Please add ONESIGNAL_REST_API_KEY in the project settings / environment variables.');
+      resultStatus = 'missing_api_key';
+      responseData = { errors: ["ONESIGNAL_REST_API_KEY environment variable is missing on server. Please configure your OneSignal REST API Key in project settings."] };
+    }
+
+    // Save history to Firestore
+    try {
+      const historyId = `notif_hist_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      await writeFirestoreDocViaREST('notification_history', historyId, {
+        id: historyId,
+        userId: userId || 'all',
+        type,
+        title,
+        message,
+        createdAt: new Date().toISOString(),
+        status: resultStatus,
+        responseData: responseData ? JSON.stringify(responseData) : null
+      }, true);
+    } catch (err) {
+      console.warn('Failed to write notification history to Firestore:', err);
+    }
+
+    return { success: true, status: resultStatus, responseData };
+  }
+
+  // Daily Morning 8:00 AM Automated Scheduler (Max 1 per user per day)
+  setInterval(async () => {
+    try {
+      const now = new Date();
+      // Bangladesh Time UTC+6
+      const bdTime = new Date(now.getTime() + (6 * 60 * 60 * 1000) + (now.getTimezoneOffset() * 60 * 1000));
+      const hours = bdTime.getHours();
+      const minutes = bdTime.getMinutes();
+      const todayStr = bdTime.toISOString().split('T')[0];
+
+      if (hours === 8 && minutes === 0) {
+        console.log(`[Morning Cron] Triggering 8:00 AM Daily Morning Notification for ${todayStr}`);
+        await sendOneSignalRestNotification(
+          'all',
+          'সুপ্রভাত 🌅',
+          'আজকের নতুন ইন্টারনেট অফার দেখে নিন।',
+          'morning_auto'
+        );
+      }
+    } catch (e) {
+      console.warn('[Morning Cron Error]:', e);
+    }
+  }, 60000); // Check every minute
+
+  // 1. Admin Broadcast & General Notification Endpoint
+  app.post('/api/onesignal/notify', async (req, res) => {
+    try {
+      const { userId, title, message } = req.body;
+      console.log(`[OneSignal Admin Broadcast] userId: ${userId}, title: ${title}`);
+      const result = await sendOneSignalRestNotification(
+        userId || 'all',
+        title || 'Fahim Internet',
+        message || 'নতুন নোটিফিকেশন এসেছে।',
+        'admin_broadcast'
+      );
+      if (result.status === 'missing_api_key' || (result.responseData && result.responseData.errors)) {
+        return res.status(400).json({ 
+          success: false, 
+          error: 'OneSignal REST API Authentication Failed', 
+          details: result.responseData?.errors || ['ONESIGNAL_REST_API_KEY is missing or invalid in server environment.'] 
+        });
+      }
+      return res.json({ success: true, message: 'OneSignal notification sent successfully.', result });
+    } catch (err: any) {
+      console.error('OneSignal Notification Error:', err?.message || err);
+      res.status(500).json({ success: false, error: 'Failed to process OneSignal notification' });
+    }
+  });
+
+  // Alias legacy route /api/fcm/notify to /api/onesignal/notify
+  app.post('/api/fcm/notify', (req, res, next) => {
+    req.url = '/api/onesignal/notify';
+    return app._router.handle(req, res, next);
+  });
+
+  // 2. Login Notification Endpoint
+  app.post('/api/notifications/login', async (req, res) => {
+    try {
+      const { userId } = req.body;
+      const title = 'Welcome to Fahim Internet';
+      const message = 'আপনার অ্যাকাউন্টে সফলভাবে লগইন হয়েছে।';
+      const result = await sendOneSignalRestNotification(userId || 'all', title, message, 'login');
+      return res.json({ success: true, result });
+    } catch (err: any) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  // 3. Payment Notification Endpoint
+  app.post('/api/notifications/payment', async (req, res) => {
+    try {
+      const { userId } = req.body;
+      const title = 'Payment Successful';
+      const message = 'আপনার পেমেন্ট সফলভাবে সম্পন্ন হয়েছে।';
+      const result = await sendOneSignalRestNotification(userId || 'all', title, message, 'payment');
+      return res.json({ success: true, result });
+    } catch (err: any) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  // 4. Recharge Notification Endpoint
+  app.post('/api/notifications/recharge', async (req, res) => {
+    try {
+      const { userId } = req.body;
+      const title = 'Recharge Successful';
+      const message = 'আপনার রিচার্জ সফলভাবে সম্পন্ন হয়েছে।';
+      const result = await sendOneSignalRestNotification(userId || 'all', title, message, 'recharge');
+      return res.json({ success: true, result });
+    } catch (err: any) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
 
   // API Health Check
   app.get('/api/health', (req, res) => {
@@ -1451,6 +1924,20 @@ Respond appropriately to the user's input: "${message}". Maintain the context of
             apiResponseStatus: 'SUCCESS',
             apiTransactionId: trxId
           }, true);
+
+          // Trigger FCM notification
+          const orderDoc = await readFirestoreDocViaREST('orders', orderId);
+          if (orderDoc) {
+            fetch('http://localhost:3000/api/fcm/notify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                userId: orderDoc.customerPhone || orderDoc.userId || 'all',
+                title: 'পেমেন্ট ও রিচার্জ সফল!',
+                message: `আপনার ৳${amount} রিচার্জ সফলভাবে হয়েছে! ট্রানজেকশন আইডি: ${trxId}`
+              })
+            }).catch(e => console.error('Notification trigger error:', e));
+          }
         } catch (e) {
           console.warn('Error updating order status in Firestore:', e);
         }
@@ -1508,6 +1995,8 @@ Respond appropriately to the user's input: "${message}". Maintain the context of
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on http://0.0.0.0:${PORT} (Detected mode: ${isProduction ? 'production' : 'development'})`);
+    console.log(`ONESIGNAL_REST_API_KEY configured: ${!!process.env.ONESIGNAL_REST_API_KEY}`);
+    console.log(`ONESIGNAL_APP_ID configured: ${!!process.env.ONESIGNAL_APP_ID}`);
   });
 }
 
