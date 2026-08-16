@@ -1,0 +1,36 @@
+workflows:
+  android-release-workflow:
+    name: Android Release AAB Workflow
+    max_build_duration: 60
+    environment:
+      node: v22.x
+      java: 21
+      groups:
+        - android_signing
+    scripts:
+      - name: Install dependencies
+        script: |
+          npm install
+      - name: Build web app
+        script: |
+          npm run build
+      - name: Sync Capacitor
+        script: |
+          npx cap sync android
+      - name: Setup Gradle wrapper permissions
+        script: |
+          cd android
+          chmod +x ./gradlew
+      - name: Build Android App Bundle (AAB)
+        script: |
+          cd android
+          ./gradlew bundleRelease
+    artifacts:
+      - android/app/build/outputs/bundle/release/*.aab
+    publishing:
+      email:
+        recipients:
+          - free122055@gmail.com
+        notify:
+          success: true
+          failure: true
