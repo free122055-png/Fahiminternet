@@ -403,7 +403,7 @@ const getDistPath = () => {
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = process.env.TEST_PORT ? Number(process.env.TEST_PORT) : 3000;
 
   // Domain redirection & canonical host middleware:
   // Automatically redirects root domain (fahiminternet.com & fahiminternetbd.com) to main domain (www.fahiminternet.com)

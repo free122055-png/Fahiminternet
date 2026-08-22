@@ -1,0 +1,58 @@
+workflows:
+  android-aab-release:
+    name: Build Android Release AAB
+    max_build_duration: 30
+    instance_type: mac_mini_m1
+    environment:
+      node: 22
+      java: 21
+    scripts:
+      - name: Install Dependencies
+        script: |
+          npm install
+
+      - name: Generate Android Icons
+        script: |
+          node generate_icons.js || true
+
+      - name: Build Web App
+        script: |
+          npm run build
+
+      - name: Sync Capacitor Android
+        script: |
+          npx cap sync android
+
+      - name: Set App Version
+        script: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          file = Path("android/app/build.gradle")
+          if file.exists():
+              content = file.read_text()
+              content = re.sub(r'versionCode\s+\d+', 'versionCode 5', content, count=1)
+              content = re.sub(r'versionName\s+"[^"]+"', 'versionName "5.0"', content, count=1)
+              file.write_text(content)
+              print("Version updated to 5.0 (5)")
+          PY
+
+      - name: Fix Gradle Wrapper & Build AAB
+        script: |
+          cd android
+          gradle wrapper
+          chmod +x gradlew
+          ./gradlew bundleRelease
+
+    artifacts:
+      - android/app/build/outputs/bundle/**/*.aab
+      - build/**/outputs/**/*.aab
+
+    publishing:
+      email:
+        recipients:
+          - user@example.com
+        notify:
+          failure: false
+          success: false
