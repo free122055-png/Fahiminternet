@@ -119,6 +119,7 @@ export default function SoftwareDashboard({
   const [selectedHistoryOrder, setSelectedHistoryOrder] = useState<Order | null>(null);
   const [showAllFeatures, setShowAllFeatures] = useState(false);
   const [showSmartAccount, setShowSmartAccount] = useState(false);
+  const [bannerLoaded, setBannerLoaded] = useState(false);
   const [isOffline, setIsOffline] = React.useState(!navigator.onLine);
 
   React.useEffect(() => {
@@ -593,21 +594,34 @@ export default function SoftwareDashboard({
 
               {/* 1. HERO BANNER WITH OVERLAPPING FLOATING SEARCH BAR (SINGLE STATIC IMAGE) */}
               <div className="px-5 pt-2 relative">
-                <div className="h-32 sm:h-40 w-full rounded-3xl overflow-hidden relative border border-slate-200/80 shadow-md bg-slate-900">
-                  {settings?.topBannerImage ? (
-                    <img
-                      src={settings.topBannerImage}
-                      alt="Main Banner"
-                      referrerPolicy="no-referrer"
-                      className="w-full h-full object-cover select-none"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-slate-800 animate-pulse flex flex-col items-center justify-center">
-                      <Sparkles className="w-8 h-8 text-slate-700 mb-2" />
-                      <div className="h-2 w-32 bg-slate-700 rounded-full" />
+                {(() => {
+                  let bannerSrc = settings?.topBannerImage || 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=60&w=800&auto=format&fit=crop';
+                  if (bannerSrc.includes('unsplash.com')) {
+                    if (bannerSrc.includes('w=2070')) {
+                      bannerSrc = bannerSrc.replace('w=2070', 'w=800');
+                    }
+                    if (bannerSrc.includes('q=80')) {
+                      bannerSrc = bannerSrc.replace('q=80', 'q=60');
+                    }
+                  }
+                  return (
+                    <div className="h-32 sm:h-40 w-full rounded-3xl overflow-hidden relative border border-slate-200/80 shadow-md bg-gradient-to-r from-pink-200 via-purple-200 to-indigo-300">
+                      <img
+                        src={bannerSrc}
+                        alt="Main Banner"
+                        referrerPolicy="no-referrer"
+                        loading="eager"
+                        onLoad={() => setBannerLoaded(true)}
+                        className={`w-full h-full object-cover select-none transition-opacity duration-700 ${bannerLoaded ? 'opacity-100' : 'opacity-0'}`}
+                      />
+                      {!bannerLoaded && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center text-purple-400/40 animate-pulse">
+                          <Sparkles className="w-8 h-8 mb-2" />
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
+                  );
+                })()}
 
                 {/* FLOATING OVERLAY SEARCH BAR (BKASH DASHBOARD STYLE OVERLAPPING BANNER EDGE) */}
                 <div className="absolute -bottom-6 left-5 right-5 h-14 bg-white rounded-2xl shadow-xl shadow-slate-200/60 border border-slate-100 p-2 flex items-center gap-3 z-20">
@@ -1564,24 +1578,21 @@ export default function SoftwareDashboard({
           </div>
         )}
 
-      {/* ------------------ 8. BOTTOM MOBILE NAVIGATION BAR (5 TABS) ------------------ */}
+      {/* ------------------ 8. BOTTOM MOBILE NAVIGATION BAR (4 TABS) ------------------ */}
       <nav className="absolute bottom-0 left-0 right-0 h-[72px] bg-white border-t border-slate-100 flex items-center justify-around px-2 z-40 pb-2">
         {[
           { id: 'home', label: 'হোম', icon: Home },
           { id: 'offers', label: 'অফার', icon: LayoutGrid },
-          { id: 'tilawat', label: 'তিলাওয়াত', icon: Headphones },
           { id: 'history', label: 'হিস্টোরি', icon: History },
           { id: 'profile', label: 'প্রোফাইল', icon: User },
         ].map((tab) => {
-          const isActive = tab.id === 'tilawat' ? activeMenuModal === 'tilawat_library' : (activeNavTab === tab.id && !activeMenuModal);
+          const isActive = activeNavTab === tab.id && !activeMenuModal;
           const Icon = tab.icon;
           return (
             <button
               key={tab.id}
               onClick={() => {
-                if (tab.id === 'tilawat') {
-                  setActiveMenuModal('tilawat_library');
-                } else if (tab.id === 'home' || tab.id === 'profile') {
+                if (tab.id === 'home' || tab.id === 'profile') {
                   setActiveMenuModal(null);
                   setActiveNavTab(tab.id as any);
                 } else {
@@ -1893,9 +1904,16 @@ export default function SoftwareDashboard({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
             transition={{ duration: 0.2 }}
-            className="absolute inset-0 z-50 bg-[#070b14] overflow-y-auto"
+            className="absolute inset-0 z-50 bg-[#f8fafc] overflow-y-auto"
           >
-            <TilawatLibrary onBack={() => setActiveMenuModal(null)} />
+            <TilawatLibrary 
+              onBack={() => setActiveMenuModal(null)} 
+              customQaris={settings?.customQaris} 
+              customTilawatAudios={settings?.customTilawatAudios}
+              customVideoTilawats={settings?.customVideoTilawats}
+              customBackgroundSounds={settings?.customBackgroundSounds}
+              tilawatBanners={settings?.tilawatBanners}
+            />
           </motion.div>
         ) : activeMenuModal ? (
           <div className="absolute inset-0 z-50 bg-white overflow-y-auto">

@@ -155,6 +155,24 @@ service cloud.firestore {
       allow read, get, list, create, update, delete: if true;
     }
 
+    match /video_tilawats/{id} {
+      allow read, get, list: if true;
+      allow write: if true;
+
+      match /{allChildren=**} {
+        allow read, get, list, write: if true;
+      }
+    }
+
+    match /audio_tilawats/{id} {
+      allow read, get, list: if true;
+      allow write: if true;
+
+      match /{allChildren=**} {
+        allow read, get, list, write: if true;
+      }
+    }
+
     match /settings/{settingId} {
       allow read, get, list, write: if true;
 
@@ -220,6 +238,18 @@ service cloud.firestore {
     match /reseller_sales/{saleId} {
       allow read, get, list, create, update: if isAuthenticated();
       allow delete: if isAdmin();
+    }
+
+    match /students/{studentId} {
+      allow read, get, list, create, update, delete: if true;
+    }
+
+    match /teachers/{teacherId} {
+      allow read, get, list, create, update, delete: if true;
+    }
+
+    match /attendance/{recordId} {
+      allow read, get, list, create, update, delete: if true;
     }
   }
 }

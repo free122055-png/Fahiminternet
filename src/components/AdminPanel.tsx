@@ -1,15 +1,83 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Order, DataPack, Operator, PackCategory, SiteSettings, WifiPackage, PromoBanner } from '../types';
+import { Order, DataPack, Operator, PackCategory, SiteSettings, WifiPackage, PromoBanner, CustomTilawatAudio, VideoTilawat, BackgroundSoundItem, TilawatBanner } from '../types';
 import { 
   ShieldCheck, Lock, Eye, EyeOff, LayoutDashboard, ListOrdered, Package, 
   TrendingUp, CircleDollarSign, Hourglass, CheckSquare, RefreshCw, Trash2, 
   Plus, Sparkles, Check, X, AlertTriangle, Settings, Wifi, Edit, Upload, Shield, Smartphone, FileText, Save, Phone, CreditCard,
   GraduationCap, Briefcase, ArrowRight, ExternalLink, Copy, CheckCircle, Users, Image as ImageIcon, Bell, Search, Globe, Zap, Bot, LayoutGrid, Building2,
-  Link2, CheckCircle2, Layers, Wallet, Headset, Video, MonitorPlay, User, PhoneCall, Send
+  Link2, CheckCircle2, Layers, Wallet, Headset, Video, MonitorPlay, User, PhoneCall, Send, Music, Play, Pause, Volume2, Mic, FileAudio, Camera, Film,
+  Loader2, AlertCircle, CloudRain, RotateCcw
 } from 'lucide-react';
 import { db } from '../lib/firebase';
 import { collection, onSnapshot, doc, addDoc, updateDoc, deleteDoc, getDocs, setDoc, getDoc } from 'firebase/firestore';
 import { GPLogo, RobiLogo, BanglalinkLogo, AirtelLogo, TeletalkLogo } from './OperatorLogos';
+import { ALL_QARIS, ALL_SURAHS } from '../data/surahData';
+import { saveMediaBlob } from '../utils/mediaStorage';
+import { DEFAULT_VIDEO_TILAWATS } from './VideoTilawatSection';
+import { BACKGROUND_SOUNDS_LIST } from './TilawatLibrary';
+
+export const DEFAULT_TILAWAT_AUDIOS: CustomTilawatAudio[] = [
+  {
+    id: 'aud-1',
+    title: 'সূরা আল-ফাতিহা - হৃদয়ে প্রশান্তিময় সুন্দর তিলাওয়াত',
+    surahNumber: 1,
+    surahName: 'আল-ফাতিহা',
+    qariName: 'শায়খ মিশারী বিন রশিদ আল-আফাসী',
+    qariId: 'alafasy',
+    qariImage: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+    audioUrl: 'https://server8.mp3quran.net/afs/001.mp3',
+    audioFileName: '001_Al_Fatiha_Alafasy.mp3',
+    fileSize: '1.8 MB',
+    duration: '01:45',
+    description: 'উম্মুল কুরআন সূরা আল-ফাতিহার অত্যন্ত হৃদয়স্পর্শী তিলাওয়াত।',
+    uploadedAt: '১৪ মে, ২০২৪'
+  },
+  {
+    id: 'aud-2',
+    title: 'সূরা আর-রহমান - সুমধুর কণ্ঠে পূর্ণাঙ্গ তিলাওয়াত',
+    surahNumber: 55,
+    surahName: 'আর-রহমান',
+    qariName: 'শায়খ আব্দুর রহমান আস-সুদাইস',
+    qariId: 'sudais',
+    qariImage: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=150&auto=format&fit=crop&q=80',
+    audioUrl: 'https://server11.mp3quran.net/sds/055.mp3',
+    audioFileName: '055_Ar_Rahman_Sudais.mp3',
+    fileSize: '8.4 MB',
+    duration: '14:20',
+    description: 'আল্লাহর অশেষ নিয়ামতের কথা স্মরণে সূরা আর-রহমানের মন জুড়ানো তিলাওয়াত।',
+    uploadedAt: '১৮ জুন, ২০২৪'
+  },
+  {
+    id: 'aud-3',
+    title: 'সূরা ইয়াসিন - সকালের শুভ সূচনায় বরকতময় তিলাওয়াত',
+    surahNumber: 36,
+    surahName: 'ইয়াসিন',
+    qariName: 'শায়খ সাউদ আল-জুমাহ',
+    qariId: 'shuraim',
+    qariImage: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
+    audioUrl: 'https://server7.mp3quran.net/shur/036.mp3',
+    audioFileName: '036_Yaseen_Shuraim.mp3',
+    fileSize: '11.2 MB',
+    duration: '21:10',
+    description: 'কুরআনের হৃৎপিণ্ড সূরা ইয়াসিনের বিশেষ তিলাওয়াত।',
+    uploadedAt: '০৫ জুলাই, ২০২৪'
+  },
+  {
+    id: 'aud-4',
+    title: 'সূরা আল-মুলক - ঘুমানোর পূর্বে আমলযোগ্য তিলাওয়াত',
+    surahNumber: 67,
+    surahName: 'আল-মুলক',
+    qariName: 'শায়খ মাহের আল-মুয়াইকলি',
+    qariId: 'maher',
+    qariImage: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80',
+    audioUrl: 'https://server12.mp3quran.net/maher/067.mp3',
+    audioFileName: '067_Al_Mulk_Maher.mp3',
+    fileSize: '6.5 MB',
+    duration: '09:30',
+    description: 'কবরের আজাব থেকে রক্ষার মাধ্যম সূরা আল-মুলক।',
+    uploadedAt: '১০ আগস্ট, ২০২৪'
+  }
+];
 
 
 
@@ -90,10 +158,722 @@ export default function AdminPanel({
   };
 
   // Active Admin View Tab
-  const [adminTab, setAdminTab] = useState<'dashboard' | 'orders' | 'packages' | 'users' | 'banners' | 'software_requests' | 'settings' | 'add_money'>('dashboard');
+  const [adminTab, setAdminTab] = useState<'dashboard' | 'orders' | 'packages' | 'users' | 'banners' | 'software_requests' | 'settings' | 'add_money' | 'tilawat_qaris' | 'video_tilawat' | 'analytics'>('dashboard');
   const [isAdminMobileView, setIsAdminMobileView] = useState(false);
   const [usersList, setUsersList] = useState<any[]>([]);
   const [userSearchQuery, setUserSearchQuery] = useState('');
+
+  // Qari Management States
+  const [qariName, setQariName] = useState('');
+  const [qariArabicName, setQariArabicName] = useState('');
+  const [qariCountry, setQariCountry] = useState('সৌদি আরব');
+  const [qariImage, setQariImage] = useState('');
+  const [qariServerUrl, setQariServerUrl] = useState('');
+  const [qariFallbackUrl, setQariFallbackUrl] = useState('https://server8.mp3quran.net/afs');
+  const [qariBio, setQariBio] = useState('');
+  const [qariListens, setQariListens] = useState('1.5M listens');
+  const [qariInitials, setQariInitials] = useState('');
+  const [editingQari, setEditingQari] = useState<any>(null);
+
+  const handleSaveQari = async () => {
+    if (!qariName.trim() || !qariServerUrl.trim()) {
+      alert('⚠️ দয়া করে ক্বারীর নাম এবং অডিও সার্ভার ইউআরএল দিন।');
+      return;
+    }
+    const currentQaris = settings.customQaris && settings.customQaris.length > 0 ? [...settings.customQaris] : [...ALL_QARIS];
+    
+    const newQari = {
+      id: editingQari ? editingQari.id : 'qari_' + Date.now(),
+      name: qariName.trim(),
+      arabicName: qariArabicName.trim(),
+      country: qariCountry.trim(),
+      image: qariImage.trim(),
+      serverUrl: qariServerUrl.trim(),
+      fallbackUrl: qariFallbackUrl.trim(),
+      bio: qariBio.trim(),
+      listens: qariListens.trim() || '1.0M listens',
+      initials: qariInitials.trim() || qariName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase(),
+      isPopular: true
+    };
+
+    let updatedList = [];
+    if (editingQari) {
+      updatedList = currentQaris.map(q => q.id === editingQari.id ? newQari : q);
+    } else {
+      updatedList = [newQari, ...currentQaris];
+    }
+
+    try {
+      await onUpdateSettings({
+        ...settings,
+        customQaris: updatedList
+      });
+      alert('🎉 ক্বারী সফলভাবে সেভ করা হয়েছে!');
+      setEditingQari(null);
+      setQariName('');
+      setQariArabicName('');
+      setQariCountry('সৌদি আরব');
+      setQariImage('');
+      setQariServerUrl('');
+      setQariBio('');
+      setQariListens('1.5M listens');
+      setQariInitials('');
+    } catch (err: any) {
+      alert('❌ সেভ করতে সমস্যা হয়েছে: ' + (err?.message || String(err)));
+    }
+  };
+
+  const handleEditQari = (qari: any) => {
+    setEditingQari(qari);
+    setQariName(qari.name || '');
+    setQariArabicName(qari.arabicName || '');
+    setQariCountry(qari.country || 'সৌদি আরব');
+    setQariImage(qari.image || '');
+    setQariServerUrl(qari.serverUrl || '');
+    setQariFallbackUrl(qari.fallbackUrl || 'https://server8.mp3quran.net/afs');
+    setQariBio(qari.bio || '');
+    setQariListens(qari.listens || '1.5M listens');
+    setQariInitials(qari.initials || '');
+  };
+
+  const handleDeleteQari = async (id: string) => {
+    if (!confirm('আপনি কি নিশ্চিত এই ক্বারী ডিলিট করতে চান?')) return;
+    const currentQaris = settings.customQaris && settings.customQaris.length > 0 ? settings.customQaris : ALL_QARIS;
+    const updatedList = currentQaris.filter(q => q.id !== id);
+    try {
+      await onUpdateSettings({
+        ...settings,
+        customQaris: updatedList
+      });
+      alert('🗑️ ক্বারী ডিলিট করা হয়েছে!');
+    } catch (err: any) {
+      alert('❌ ডিলিট করতে সমস্যা হয়েছে: ' + (err?.message || String(err)));
+    }
+  };
+
+  const handleQariImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (uploadEvent) => {
+      const result = uploadEvent.target?.result as string;
+      if (result) {
+        setQariImage(result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Custom Audio Tilawat Upload States
+  const [qariSubTab, setQariSubTab] = useState<'upload_audio' | 'qaris' | 'audio_list' | 'background_sounds' | 'banners'>('upload_audio');
+
+  // Background Sound Admin States
+  const [bgSoundName, setBgSoundName] = useState('');
+  const [bgSoundBengaliName, setBgSoundBengaliName] = useState('');
+  const [bgSoundIcon, setBgSoundIcon] = useState('🌧️');
+  const [bgSoundAudioUrl, setBgSoundAudioUrl] = useState('');
+  const [bgSoundDefaultVol, setBgSoundDefaultVol] = useState(0.25);
+  const [editingBgSound, setEditingBgSound] = useState<BackgroundSoundItem | null>(null);
+
+  // Tilawat Banners States
+  const [bannerTitle, setBannerTitle] = useState('');
+  const [bannerSubtitle, setBannerSubtitle] = useState('');
+  const [bannerQariId, setBannerQariId] = useState('');
+  const [bannerSurahNumber, setBannerSurahNumber] = useState<number>(1);
+  const [bannerCustomAudioId, setBannerCustomAudioId] = useState('');
+  const [bannerImageUrl, setBannerImageUrl] = useState('');
+
+  const handleAddTilawatBanner = async () => {
+    if (!bannerTitle.trim()) {
+      alert('⚠️ দয়া করে ব্যানারের শিরোনাম লিখুন।');
+      return;
+    }
+
+    const newBanner: TilawatBanner = {
+      id: 'banner_' + Date.now(),
+      title: bannerTitle.trim(),
+      subtitle: bannerSubtitle.trim(),
+      qariId: bannerQariId || 'saud_al_jumah',
+      surahNumber: bannerSurahNumber,
+      customAudioId: bannerCustomAudioId || undefined,
+      imageUrl: bannerImageUrl.trim() || undefined,
+    };
+
+    const updatedBanners = [...(settings.tilawatBanners || []), newBanner];
+    await onUpdateSettings({ ...settings, tilawatBanners: updatedBanners });
+
+    // Reset Form
+    setBannerTitle('');
+    setBannerSubtitle('');
+    setBannerQariId('');
+    setBannerSurahNumber(1);
+    setBannerCustomAudioId('');
+    setBannerImageUrl('');
+    alert('✅ তিলাওয়াত ব্যানার সফলভাবে যুক্ত করা হয়েছে!');
+  };
+
+  const handleDeleteTilawatBanner = async (bannerId: string) => {
+    if (!confirm('আপনি কি নিশ্চিতভাবে এই ব্যানারটি মুছে ফেলতে চান?')) return;
+    const updatedBanners = (settings.tilawatBanners || []).filter(b => b.id !== bannerId);
+    await onUpdateSettings({ ...settings, tilawatBanners: updatedBanners });
+    alert('✅ ব্যানার মুছে ফেলা হয়েছে!');
+  };
+
+  const handleSaveBgSound = async () => {
+    if (!bgSoundName.trim() || !bgSoundBengaliName.trim() || !bgSoundAudioUrl.trim()) {
+      alert('⚠️ দয়া করে সাউন্ডের ইংরেজি নাম, বাংলা নাম এবং অডিও ইউআরএল (Audio URL) লিখুন।');
+      return;
+    }
+
+    const newId = editingBgSound ? editingBgSound.id : 'bgsound_' + Date.now();
+    const newSound: BackgroundSoundItem = {
+      id: newId,
+      name: bgSoundName.trim(),
+      bengaliName: bgSoundBengaliName.trim(),
+      icon: bgSoundIcon.trim() || '🔊',
+      audioUrl: bgSoundAudioUrl.trim(),
+      defaultVolume: Number(bgSoundDefaultVol)
+    };
+
+    const currentList = settings.customBackgroundSounds && settings.customBackgroundSounds.length > 0
+      ? [...settings.customBackgroundSounds]
+      : [...BACKGROUND_SOUNDS_LIST];
+
+    let updatedList: BackgroundSoundItem[] = [];
+    if (editingBgSound) {
+      updatedList = currentList.map(s => s.id === editingBgSound.id ? newSound : s);
+    } else {
+      updatedList = [newSound, ...currentList];
+    }
+
+    try {
+      await onUpdateSettings({
+        ...settings,
+        customBackgroundSounds: updatedList
+      });
+      alert('🎉 ব্যাকগ্রাউন্ড সাউন্ড সফলভাবে সেভ হয়েছে!');
+      setEditingBgSound(null);
+      setBgSoundName('');
+      setBgSoundBengaliName('');
+      setBgSoundIcon('🌧️');
+      setBgSoundAudioUrl('');
+      setBgSoundDefaultVol(0.25);
+    } catch (err: any) {
+      alert('❌ সেভ করতে সমস্যা হয়েছে: ' + (err?.message || String(err)));
+    }
+  };
+
+  const handleDeleteBgSound = async (id: string) => {
+    if (!confirm('আপনি কি এই ব্যাকগ্রাউন্ড সাউন্ডটি রিমুভ করতে চান?')) return;
+    const currentList = settings.customBackgroundSounds && settings.customBackgroundSounds.length > 0
+      ? settings.customBackgroundSounds
+      : BACKGROUND_SOUNDS_LIST;
+
+    const updatedList = currentList.filter(s => s.id !== id);
+    try {
+      await onUpdateSettings({
+        ...settings,
+        customBackgroundSounds: updatedList
+      });
+      alert('🗑️ ব্যাকগ্রাউন্ড সাউন্ড সফলভাবে রিমুভ করা হয়েছে!');
+    } catch (err: any) {
+      alert('❌ রিমুভ করতে সমস্যা হয়েছে: ' + (err?.message || String(err)));
+    }
+  };
+
+  const handleResetDefaultBgSounds = async () => {
+    if (!confirm('আপনি কি পূর্বে সংরক্ষিত ২৪টি ডিফল্ট ব্যাকগ্রাউন্ড সাউন্ড লিস্টে রিসেট করতে চান?')) return;
+    try {
+      await onUpdateSettings({
+        ...settings,
+        customBackgroundSounds: BACKGROUND_SOUNDS_LIST
+      });
+      alert('🔄 ব্যাকগ্রাউন্ড সাউন্ডস সফলভাবে রিসেট করা হয়েছে!');
+    } catch (err: any) {
+      alert('❌ রিসেট করতে সমস্যা হয়েছে: ' + (err?.message || String(err)));
+    }
+  };
+  const [audioTitle, setAudioTitle] = useState('');
+  const [audioSurahNumber, setAudioSurahNumber] = useState<number>(1);
+  const [audioQariName, setAudioQariName] = useState('শায়খ মিশারী বিন রশিদ আল-আফাসী');
+  const [audioQariId, setAudioQariId] = useState('alafasy');
+  const [audioQariImage, setAudioQariImage] = useState('');
+  const [audioUrl, setAudioUrl] = useState('');
+  const [selectedAudioBlob, setSelectedAudioBlob] = useState<Blob | null>(null);
+  const [audioFileName, setAudioFileName] = useState('');
+  const [audioFileSize, setAudioFileSize] = useState('');
+  const [audioDuration, setAudioDuration] = useState('');
+  const [audioDescription, setAudioDescription] = useState('');
+  const [editingAudio, setEditingAudio] = useState<CustomTilawatAudio | null>(null);
+  const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
+  const [isSavingAudio, setIsSavingAudio] = useState(false);
+  const [saveAudioStatus, setSaveAudioStatus] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
+  const audioPreviewRef = useRef<HTMLAudioElement | null>(null);
+
+  const handleAudioQariImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const result = event.target?.result as string;
+      if (result) {
+        setAudioQariImage(result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleAudioFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setSelectedAudioBlob(file);
+    const sizeMB = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+    setAudioFileName(file.name);
+    setAudioFileSize(sizeMB);
+
+    const cleanName = file.name.replace(/\.[^/.]+$/, '');
+    if (!audioTitle) {
+      setAudioTitle(cleanName);
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+    setAudioUrl(objectUrl);
+
+    try {
+      const tempAudio = new Audio(objectUrl);
+      tempAudio.onloadedmetadata = () => {
+        if (tempAudio.duration && !isNaN(tempAudio.duration)) {
+          const mins = Math.floor(tempAudio.duration / 60);
+          const secs = Math.floor(tempAudio.duration % 60);
+          setAudioDuration(`${mins}:${secs < 10 ? '0' : ''}${secs}`);
+        }
+      };
+    } catch (err) {
+      console.warn('Audio metadata read notice:', err);
+    }
+  };
+
+  const handleSaveCustomAudio = async () => {
+    setIsSavingAudio(true);
+    setSaveAudioStatus({ type: 'info', message: 'অডিও প্রসেসিং এবং সেভ করা হচ্ছে...' });
+
+    const surahObj = ALL_SURAHS.find(s => s.number === Number(audioSurahNumber)) || ALL_SURAHS[0];
+
+    const effectiveQari = audioQariName.trim() || 'শায়খ মিশারী বিন রশিদ আল-আফাসী';
+    const effectiveTitle = audioTitle.trim() || `${surahObj.name} - ${effectiveQari} তিলাওয়াত`;
+    let effectiveAudioUrl = audioUrl.trim();
+
+    // Fallback audio URL if empty and no file selected
+    if (!effectiveAudioUrl && !selectedAudioBlob) {
+      effectiveAudioUrl = `https://server8.mp3quran.net/afs/${String(audioSurahNumber).padStart(3, '0')}.mp3`;
+    }
+
+    const newId = editingAudio ? editingAudio.id : 'audio_' + Date.now();
+
+    const newAudio: CustomTilawatAudio = {
+      id: newId,
+      title: effectiveTitle,
+      surahNumber: Number(audioSurahNumber),
+      surahName: surahObj.name,
+      qariName: effectiveQari,
+      qariId: audioQariId.trim() || 'alafasy',
+      qariImage: audioQariImage.trim() || 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=150&auto=format&fit=crop&q=80',
+      audioUrl: effectiveAudioUrl,
+      audioFileName: audioFileName.trim() || (selectedAudioBlob ? 'tilawat_audio.mp3' : 'online_stream.mp3'),
+      fileSize: audioFileSize.trim() || '3.2 MB',
+      duration: audioDuration.trim() || '04:30',
+      description: audioDescription.trim() || `${surahObj.name} - ${effectiveQari} এর সুললিত তিলাওয়াত।`,
+      uploadedAt: new Date().toLocaleDateString('bn-BD', { day: 'numeric', month: 'short', year: 'numeric' })
+    };
+
+    // Save actual Blob to IndexedDB
+    try {
+      if (selectedAudioBlob) {
+        await saveMediaBlob(newId, selectedAudioBlob);
+      } else if (effectiveAudioUrl && (effectiveAudioUrl.startsWith('blob:') || effectiveAudioUrl.startsWith('data:'))) {
+        try {
+          const res = await fetch(effectiveAudioUrl);
+          const blob = await res.blob();
+          await saveMediaBlob(newId, blob);
+        } catch (e) {
+          console.warn('Audio blob fetch note:', e);
+        }
+      }
+    } catch (dbErr) {
+      console.warn('IndexedDB audio save warning:', dbErr);
+    }
+
+    const currentAudios = settings.customTilawatAudios !== undefined
+      ? [...settings.customTilawatAudios]
+      : [...DEFAULT_TILAWAT_AUDIOS];
+
+    let updatedList: CustomTilawatAudio[] = [];
+    if (editingAudio) {
+      updatedList = currentAudios.map(a => a.id === editingAudio.id ? newAudio : a);
+    } else {
+      updatedList = [newAudio, ...currentAudios];
+    }
+
+    try {
+      await onUpdateSettings({
+        ...settings,
+        customTilawatAudios: updatedList
+      });
+
+      setSaveAudioStatus({ type: 'success', message: '🎉 তিলাওয়াত অডিও সফলভাবে সেভ ও আপলোড হয়েছে!' });
+
+      setTimeout(() => {
+        setEditingAudio(null);
+        setAudioTitle('');
+        setAudioQariImage('');
+        setAudioUrl('');
+        setSelectedAudioBlob(null);
+        setAudioFileName('');
+        setAudioFileSize('');
+        setAudioDuration('');
+        setAudioDescription('');
+        setIsSavingAudio(false);
+        setSaveAudioStatus(null);
+        setQariSubTab('audio_list');
+      }, 600);
+    } catch (err: any) {
+      console.error('Error saving audio settings:', err);
+      setIsSavingAudio(false);
+      setSaveAudioStatus({ type: 'error', message: '❌ অডিও সেভ করতে সমস্যা হয়েছে: ' + (err?.message || String(err)) });
+    }
+  };
+
+  const handleEditCustomAudio = (item: CustomTilawatAudio) => {
+    setEditingAudio(item);
+    setAudioTitle(item.title);
+    setAudioSurahNumber(item.surahNumber);
+    setAudioQariName(item.qariName);
+    setAudioQariId(item.qariId || '');
+    setAudioQariImage(item.qariImage || '');
+    setAudioUrl(item.audioUrl);
+    setAudioFileName(item.audioFileName || '');
+    setAudioFileSize(item.fileSize || '');
+    setAudioDuration(item.duration || '');
+    setAudioDescription(item.description || '');
+    setQariSubTab('upload_audio');
+  };
+
+  const handleDeleteCustomAudio = async (id: string) => {
+    if (!confirm('আপনি কি নিশ্চিত এই তিলাওয়াত অডিওটি মুছে ফেলতে চান?')) return;
+    const currentAudios = settings.customTilawatAudios !== undefined ? settings.customTilawatAudios : DEFAULT_TILAWAT_AUDIOS;
+    const updatedList = currentAudios.filter(a => a.id !== id);
+    try {
+      await onUpdateSettings({
+        ...settings,
+        customTilawatAudios: updatedList
+      });
+      alert('🗑️ অডিও সফলভাবে মুছে ফেলা হয়েছে!');
+    } catch (err: any) {
+      alert('❌ ডিলিট করতে সমস্যা হয়েছে: ' + (err?.message || String(err)));
+    }
+  };
+
+  const handleResetDemoAudios = async () => {
+    if (!confirm('আপনি কি সকল ডেমো অডিও মূল অবস্থায় রিস্টোর করতে চান?')) return;
+    try {
+      await onUpdateSettings({
+        ...settings,
+        customTilawatAudios: DEFAULT_TILAWAT_AUDIOS
+      });
+      alert('🔄 সকল ডেমো অডিও রিস্টোর করা হয়েছে!');
+    } catch (err: any) {
+      alert('❌ রিস্টোর করতে সমস্যা হয়েছে: ' + (err?.message || String(err)));
+    }
+  };
+
+  const handleClearAllAudios = async () => {
+    if (!confirm('আপনি কি তালিকা থেকে সকল অডিও মুছে ফেলতে চান? (খালি হয়ে যাবে)')) return;
+    try {
+      await onUpdateSettings({
+        ...settings,
+        customTilawatAudios: []
+      });
+      alert('🗑️ সকল অডিও মুছে ফেলা হয়েছে!');
+    } catch (err: any) {
+      alert('❌ মুছে ফেলতে সমস্যা হয়েছে: ' + (err?.message || String(err)));
+    }
+  };
+
+  const togglePreviewAudio = (id: string, url: string) => {
+    if (playingAudioId === id) {
+      if (audioPreviewRef.current) {
+        audioPreviewRef.current.pause();
+      }
+      setPlayingAudioId(null);
+    } else {
+      if (audioPreviewRef.current) {
+        audioPreviewRef.current.pause();
+        audioPreviewRef.current.src = url;
+        audioPreviewRef.current.play().catch(e => console.warn(e));
+        setPlayingAudioId(id);
+      }
+    }
+  };
+
+  // Video Tilawat Management States (Direct Video File Uploads from Gallery/Device)
+  const [videoTitle, setVideoTitle] = useState('');
+  const [videoSurahName, setVideoSurahName] = useState('সূরা আর-রহমান');
+  const [videoQariName, setVideoQariName] = useState('ক্বারী ঈদী শাবান আফিফ');
+  const [videoQariImage, setVideoQariImage] = useState('');
+  const [videoUrl, setVideoUrl] = useState('');
+  const [selectedVideoBlob, setSelectedVideoBlob] = useState<Blob | null>(null);
+  const [videoFileName, setVideoFileName] = useState('');
+  const [videoThumbnailUrl, setVideoThumbnailUrl] = useState('');
+  const [videoDuration, setVideoDuration] = useState('28:15');
+  const [videoViews, setVideoViews] = useState('1.2M ভিউ');
+  const [videoCategory, setVideoCategory] = useState<'popular' | 'recent' | 'all'>('popular');
+  const [videoDescription, setVideoDescription] = useState('');
+  const [videoSubTab, setVideoSubTab] = useState<'upload_video' | 'video_list'>('upload_video');
+  const [editingVideo, setEditingVideo] = useState<VideoTilawat | null>(null);
+  const [isVideoFileUploading, setIsVideoFileUploading] = useState(false);
+  const [isThumbnailUploading, setIsThumbnailUploading] = useState(false);
+  const [isQariImageUploading, setIsQariImageUploading] = useState(false);
+  const [isSavingVideo, setIsSavingVideo] = useState(false);
+  const [saveVideoStatus, setSaveVideoStatus] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
+  const [previewingVideoItem, setPreviewingVideoItem] = useState<VideoTilawat | null>(null);
+
+  // Video File Upload Handler (Direct file from device/gallery or storage)
+  const handleVideoFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setSelectedVideoBlob(file);
+    setVideoFileName(file.name);
+    setIsVideoFileUploading(true);
+
+    const cleanName = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+    if (!videoTitle) {
+      setVideoTitle(cleanName);
+    }
+
+    // Create object URL for smooth playback & metadata extraction
+    const objectUrl = URL.createObjectURL(file);
+    setVideoUrl(objectUrl);
+
+    // Auto-detect duration and generate thumbnail snapshot from video
+    const tempVideo = document.createElement('video');
+    tempVideo.preload = 'auto';
+    tempVideo.muted = true;
+    tempVideo.playsInline = true;
+    tempVideo.src = objectUrl;
+
+    tempVideo.onloadedmetadata = () => {
+      const dur = tempVideo.duration;
+      if (dur && !isNaN(dur)) {
+        const hours = Math.floor(dur / 3600);
+        const minutes = Math.floor((dur % 3600) / 60);
+        const seconds = Math.floor(dur % 60);
+        if (hours > 0) {
+          setVideoDuration(`${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+        } else {
+          setVideoDuration(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+        }
+      }
+      // Seek slightly into video to capture a nice frame
+      tempVideo.currentTime = Math.min(2.0, (tempVideo.duration || 10) / 4);
+    };
+
+    tempVideo.onseeked = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = tempVideo.videoWidth || 640;
+        canvas.height = tempVideo.videoHeight || 360;
+        const ctx = canvas.getContext('2d');
+        if (ctx && canvas.width > 0 && canvas.height > 0) {
+          ctx.drawImage(tempVideo, 0, 0, canvas.width, canvas.height);
+          const thumbData = canvas.toDataURL('image/jpeg', 0.85);
+          if (!videoThumbnailUrl) {
+            setVideoThumbnailUrl(thumbData);
+          }
+        }
+      } catch (err) {
+        console.error('Could not capture frame preview', err);
+      }
+      setIsVideoFileUploading(false);
+    };
+
+    tempVideo.onerror = () => {
+      setIsVideoFileUploading(false);
+    };
+  };
+
+  // Thumbnail Image Upload Handler (From gallery)
+  const handleThumbnailImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsThumbnailUploading(true);
+    const reader = new FileReader();
+    reader.onload = (loadEvt) => {
+      setVideoThumbnailUrl(loadEvt.target?.result as string);
+      setIsThumbnailUploading(false);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Qari Image Upload Handler for Video Tilawat
+  const handleQariImageUploadForVideo = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsQariImageUploading(true);
+    const reader = new FileReader();
+    reader.onload = (loadEvt) => {
+      setVideoQariImage(loadEvt.target?.result as string);
+      setIsQariImageUploading(false);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Save / Update Video Tilawat
+  const handleSaveVideoTilawat = async () => {
+    setIsSavingVideo(true);
+    setSaveVideoStatus({ type: 'info', message: 'ভিডিও প্রসেসিং এবং সেভ করা হচ্ছে...' });
+
+    // Effective title: auto-generate if empty
+    const effectiveTitle = videoTitle.trim() || `${videoSurahName.trim() || 'সূরা আর-রহমান'} তিলাওয়াত - ${videoQariName.trim() || 'ক্বারী ঈদী শাবান আফিফ'}`;
+    
+    // Effective video URL: if empty and no file selected, fallback to standard HD video stream
+    let effectiveVideoUrl = videoUrl.trim();
+    if (!effectiveVideoUrl && !selectedVideoBlob) {
+      effectiveVideoUrl = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
+    }
+
+    const newId = editingVideo ? editingVideo.id : 'vid_' + Date.now();
+
+    const newVideoItem: VideoTilawat = {
+      id: newId,
+      title: effectiveTitle,
+      surahName: videoSurahName.trim() || 'সূরা আর-রহমান',
+      qariName: videoQariName.trim() || 'ক্বারী ঈদী শাবান আফিফ',
+      qariImage: videoQariImage.trim() || 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=150&auto=format&fit=crop&q=80',
+      videoUrl: effectiveVideoUrl,
+      videoFileName: videoFileName.trim() || (selectedVideoBlob ? 'tilawat_video.mp4' : 'online_video.mp4'),
+      thumbnailUrl: videoThumbnailUrl.trim() || 'https://images.unsplash.com/photo-1564769625905-50e93615e769?w=600&auto=format&fit=crop&q=80',
+      duration: videoDuration.trim() || '28:15',
+      views: videoViews.trim() || '1.2M ভিউ',
+      uploadedTime: 'এইমাত্র আপলোডকৃত',
+      uploadedAt: new Date().toISOString(),
+      category: videoCategory || 'popular',
+      isPopular: videoCategory === 'popular',
+      isRecent: videoCategory === 'recent',
+      likesCount: Math.floor(Math.random() * 5000) + 12000,
+      description: videoDescription.trim() || `${effectiveTitle} - ${videoQariName.trim() || 'ক্বারী তিলাওয়াত'} এর সুরেলা হৃদয়ছোঁয়া তিলাওয়াত।`
+    };
+
+    // Save actual Blob to IndexedDB
+    try {
+      if (selectedVideoBlob) {
+        await saveMediaBlob(newId, selectedVideoBlob);
+      } else if (effectiveVideoUrl && (effectiveVideoUrl.startsWith('blob:') || effectiveVideoUrl.startsWith('data:'))) {
+        try {
+          const res = await fetch(effectiveVideoUrl);
+          const blob = await res.blob();
+          await saveMediaBlob(newId, blob);
+        } catch (e) {
+          console.warn('Media blob fetch note:', e);
+        }
+      }
+    } catch (dbErr) {
+      console.warn('IndexedDB save warning:', dbErr);
+    }
+
+    const currentVideos = settings.customVideoTilawats !== undefined ? settings.customVideoTilawats : DEFAULT_VIDEO_TILAWATS;
+    let updatedList: VideoTilawat[] = [];
+    if (editingVideo) {
+      updatedList = currentVideos.map(v => v.id === editingVideo.id ? newVideoItem : v);
+    } else {
+      updatedList = [newVideoItem, ...currentVideos];
+    }
+
+    try {
+      await onUpdateSettings({
+        ...settings,
+        customVideoTilawats: updatedList
+      });
+
+      setSaveVideoStatus({ type: 'success', message: '🎉 ভিডিও তিলাওয়াত সফলভাবে সেভ করা হয়েছে!' });
+      
+      setTimeout(() => {
+        setEditingVideo(null);
+        setVideoTitle('');
+        setVideoUrl('');
+        setSelectedVideoBlob(null);
+        setVideoFileName('');
+        setVideoThumbnailUrl('');
+        setVideoDuration('28:15');
+        setVideoDescription('');
+        setIsSavingVideo(false);
+        setSaveVideoStatus(null);
+        setVideoSubTab('video_list');
+      }, 600);
+    } catch (err: any) {
+      console.error('Error updating settings with video:', err);
+      setIsSavingVideo(false);
+      setSaveVideoStatus({ type: 'error', message: '❌ ভিডিও সেভ করতে সমস্যা হয়েছে: ' + (err?.message || String(err)) });
+    }
+  };
+
+  const handleEditVideoTilawat = (item: VideoTilawat) => {
+    setEditingVideo(item);
+    setVideoTitle(item.title);
+    setVideoSurahName(item.surahName || 'সূরা আর-রহমান');
+    setVideoQariName(item.qariName);
+    setVideoQariImage(item.qariImage || '');
+    setVideoUrl(item.videoUrl);
+    setVideoFileName(item.videoFileName || '');
+    setVideoThumbnailUrl(item.thumbnailUrl || '');
+    setVideoDuration(item.duration);
+    setVideoViews(item.views || '1.0M ভিউ');
+    setVideoCategory((item.category as any) || 'popular');
+    setVideoDescription(item.description || '');
+    setVideoSubTab('upload_video');
+  };
+
+  const handleDeleteVideoTilawat = async (id: string) => {
+    if (!confirm('আপনি কি নিশ্চিত এই ভিডিও তিলাওয়াতটি মুছে ফেলতে চান?')) return;
+    const currentVideos = settings.customVideoTilawats !== undefined ? settings.customVideoTilawats : DEFAULT_VIDEO_TILAWATS;
+    const updatedList = currentVideos.filter(v => v.id !== id);
+    try {
+      await onUpdateSettings({
+        ...settings,
+        customVideoTilawats: updatedList
+      });
+      alert('🗑️ ভিডিও সফলভাবে মুছে ফেলা হয়েছে!');
+    } catch (err: any) {
+      alert('❌ ডিলিট করতে সমস্যা হয়েছে: ' + (err?.message || String(err)));
+    }
+  };
+
+  const handleResetDemoVideos = async () => {
+    if (!confirm('আপনি কি সকল ডেমো ভিডিও মূল অবস্থায় রিস্টোর করতে চান?')) return;
+    try {
+      await onUpdateSettings({
+        ...settings,
+        customVideoTilawats: DEFAULT_VIDEO_TILAWATS
+      });
+      alert('🔄 সকল ডেমো ভিডিও রিস্টোর করা হয়েছে!');
+    } catch (err: any) {
+      alert('❌ রিস্টোর করতে সমস্যা হয়েছে: ' + (err?.message || String(err)));
+    }
+  };
+
+  const handleClearAllVideos = async () => {
+    if (!confirm('আপনি কি তালিকা থেকে সকল ভিডিও মুছে ফেলতে চান? (খালি হয়ে যাবে)')) return;
+    try {
+      await onUpdateSettings({
+        ...settings,
+        customVideoTilawats: []
+      });
+      alert('🗑️ সকল ভিডিও মুছে ফেলা হয়েছে!');
+    } catch (err: any) {
+      alert('❌ মুছে ফেলতে সমস্যা হয়েছে: ' + (err?.message || String(err)));
+    }
+  };
 
   // Add Money States
   const [addMoneyRequests, setAddMoneyRequests] = useState<any[]>([]);
@@ -984,6 +1764,33 @@ export default function AdminPanel({
           >
             <Wallet className="w-3.5 h-3.5" />
             <span>অ্যাড মানি ({addMoneyRequests.filter(r => r.status === 'pending').length})</span>
+          </button>
+          <button
+            onClick={() => setAdminTab('tilawat_qaris')}
+            className={`px-4 py-2 rounded-xl text-[10px] md:text-xs font-black transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+              adminTab === 'tilawat_qaris' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+            }`}
+          >
+            <Headset className="w-3.5 h-3.5" />
+            <span>ক্বারী ম্যানেজমেন্ট</span>
+          </button>
+          <button
+            onClick={() => setAdminTab('video_tilawat')}
+            className={`px-4 py-2 rounded-xl text-[10px] md:text-xs font-black transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+              adminTab === 'video_tilawat' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+            }`}
+          >
+            <Video className="w-3.5 h-3.5" />
+            <span>ভিডিও তিলাওয়াত ({settings.customVideoTilawats?.length || 0})</span>
+          </button>
+          <button
+            onClick={() => setAdminTab('analytics')}
+            className={`px-4 py-2 rounded-xl text-[10px] md:text-xs font-black transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+              adminTab === 'analytics' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+            }`}
+          >
+            <TrendingUp className="w-3.5 h-3.5" />
+            <span>ইউজার অ্যানালিটিক্স</span>
           </button>
           <button
             onClick={() => setAdminTab('settings')}
@@ -2895,6 +3702,1619 @@ export default function AdminPanel({
                 </div>
               </div>
             </div>
+            </div>
+          </div>
+        )}
+
+        {adminTab === 'tilawat_qaris' && (
+          <div className="space-y-6 animate-fade-in">
+            {/* Audio Preview Element */}
+            <audio ref={audioPreviewRef} className="hidden" onEnded={() => setPlayingAudioId(null)} />
+
+            {/* Header */}
+            <div className="bg-gradient-to-r from-emerald-900 via-teal-900 to-slate-900 p-6 md:p-8 rounded-[32px] text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
+              <div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold mb-3 border border-emerald-500/30">
+                  <FileAudio className="w-4 h-4" />
+                  <span>তেলাওয়াত অডিও ও ক্বারী কন্ট্রোল</span>
+                </div>
+                <h2 className="text-xl md:text-2xl font-black mb-2">ক্বারী ও অডিও তিলাওয়াত ম্যানেজমেন্ট</h2>
+                <p className="text-emerald-200/80 text-xs md:text-sm max-w-2xl leading-relaxed">
+                  সরাসরি আপনার মোবাইল বা কম্পিউটার গ্যালারি/ফাইলস থেকে সূরা ও তিলাওয়াত অডিও ফাইল (MP3/M4A/WAV) আপলোড করুন এবং ক্বারীদের প্রোফাইল ও ছবি ম্যানেজ করুন।
+                </p>
+              </div>
+
+              {/* Sub-Tab Switcher */}
+              <div className="flex items-center gap-2 bg-slate-950/60 p-1.5 rounded-2xl border border-emerald-500/20 flex-wrap">
+                <button
+                  onClick={() => setQariSubTab('upload_audio')}
+                  className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all cursor-pointer ${
+                    qariSubTab === 'upload_audio'
+                      ? 'bg-emerald-600 text-white shadow-md'
+                      : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
+                  }`}
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>অডিও আপলোড</span>
+                </button>
+                <button
+                  onClick={() => setQariSubTab('audio_list')}
+                  className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all cursor-pointer ${
+                    qariSubTab === 'audio_list'
+                      ? 'bg-emerald-600 text-white shadow-md'
+                      : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
+                  }`}
+                >
+                  <Music className="w-3.5 h-3.5" />
+                  <span>আপলোডকৃত অডিও ({settings.customTilawatAudios?.length || 0})</span>
+                </button>
+                <button
+                  onClick={() => setQariSubTab('qaris')}
+                  className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all cursor-pointer ${
+                    qariSubTab === 'qaris'
+                      ? 'bg-emerald-600 text-white shadow-md'
+                      : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
+                  }`}
+                >
+                  <Headset className="w-3.5 h-3.5" />
+                  <span>ক্বারী প্রোফাইল</span>
+                </button>
+                <button
+                  onClick={() => setQariSubTab('background_sounds')}
+                  className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all cursor-pointer ${
+                    qariSubTab === 'background_sounds'
+                      ? 'bg-emerald-600 text-white shadow-md'
+                      : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
+                  }`}
+                >
+                  <CloudRain className="w-3.5 h-3.5" />
+                  <span>ব্যাকগ্রাউন্ড সাউন্ডস ({((settings.customBackgroundSounds && settings.customBackgroundSounds.length > 0) ? settings.customBackgroundSounds : BACKGROUND_SOUNDS_LIST).length})</span>
+                </button>
+                <button
+                  onClick={() => setQariSubTab('banners')}
+                  className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all cursor-pointer ${
+                    qariSubTab === 'banners'
+                      ? 'bg-emerald-600 text-white shadow-md'
+                      : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
+                  }`}
+                >
+                  <ImageIcon className="w-3.5 h-3.5" />
+                  <span>তিলাওয়াত ব্যানার ({settings.tilawatBanners?.length || 0})</span>
+                </button>
+              </div>
+            </div>
+
+            {/* -------------------- SUB-TAB 1: DIRECT AUDIO FILE UPLOAD -------------------- */}
+            {qariSubTab === 'upload_audio' && (
+              <div className="bg-white p-6 md:p-8 rounded-[32px] border border-slate-100 shadow-sm space-y-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                    <FileAudio className="w-5 h-5 text-emerald-600" />
+                    <span>{editingAudio ? 'তিলাওয়াত অডিও আপডেট করুন' : 'সরাসরি ডিভাইস/গ্যালারি থেকে তিলাওয়াত অডিও আপলোড করুন'}</span>
+                  </h3>
+                  {editingAudio && (
+                    <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-bold">
+                      এডিটিং মোড
+                    </span>
+                  )}
+                </div>
+
+                {/* Upload Zone */}
+                <div className="border-2 border-dashed border-emerald-300 bg-emerald-50/40 rounded-3xl p-6 md:p-8 text-center space-y-4 hover:border-emerald-500 transition-all">
+                  <div className="w-16 h-16 rounded-2xl bg-emerald-100 text-emerald-700 mx-auto flex items-center justify-center shadow-inner">
+                    <Music className="w-8 h-8" />
+                  </div>
+                  <div>
+                    <h4 className="text-base font-black text-slate-900">গ্যালারি অথবা ফাইল ম্যানেজার থেকে অডিও সিলেক্ট করুন</h4>
+                    <p className="text-xs text-slate-500 mt-1">সাপোর্টেড ফরম্যাট: MP3, M4A, WAV, AAC, OGG (সরাসরি প্লেব্যাক সক্ষম)</p>
+                  </div>
+
+                  <div className="flex items-center justify-center gap-3 pt-2">
+                    <label className="px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm cursor-pointer flex items-center gap-2 shadow-lg shadow-emerald-600/20 transition-all active:scale-95">
+                      <Upload className="w-4 h-4" />
+                      <span>{audioUrl ? 'অন্য অডিও পরিবর্তন করুন' : 'অডিও ফাইল পছন্দ করুন'}</span>
+                      <input 
+                        type="file" 
+                        accept="audio/*,.mp3,.m4a,.wav,.aac,.ogg" 
+                        onChange={handleAudioFileUpload} 
+                        className="hidden" 
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const surahObj = ALL_SURAHS.find(s => s.number === Number(audioSurahNumber)) || ALL_SURAHS[0];
+                        setAudioUrl(`https://server8.mp3quran.net/afs/${String(audioSurahNumber).padStart(3, '0')}.mp3`);
+                        setAudioFileName(`Surah_${surahObj.englishName}_Tilawat.mp3`);
+                        setAudioFileSize('4.5 MB');
+                        setAudioDuration('05:20');
+                        if (!audioTitle) setAudioTitle(`সূরা ${surahObj.name} - সুন্দর তিলাওয়াত`);
+                      }}
+                      className="text-xs text-emerald-700 hover:text-emerald-900 font-bold underline cursor-pointer px-3 py-2 bg-emerald-100/70 hover:bg-emerald-100 rounded-xl transition-all"
+                    >
+                      ⚡ নমুনা এইচডি অডিও সেট করুন
+                    </button>
+                  </div>
+
+                  {/* Uploaded Audio Info & Player Preview */}
+                  {audioUrl && (
+                    <div className="mt-4 p-4 bg-white rounded-2xl border border-emerald-200 shadow-sm max-w-xl mx-auto text-left space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center font-bold shrink-0">
+                            <Volume2 className="w-5 h-5" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs font-black text-slate-900 truncate">{audioFileName || 'অনলাইন/নির্বাচিত অডিও স্ট্রিম'}</p>
+                            <p className="text-[11px] text-slate-500 font-semibold">{audioFileSize || 'সফলভাবে লোড হয়েছে'} • দৈর্ঘ্য: {audioDuration || 'প্রস্তুত'}</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setAudioUrl('');
+                            setSelectedAudioBlob(null);
+                            setAudioFileName('');
+                            setAudioFileSize('');
+                            setAudioDuration('');
+                          }}
+                          className="text-rose-500 hover:text-rose-700 text-xs font-bold px-2 py-1 bg-rose-50 rounded-lg shrink-0 cursor-pointer"
+                        >
+                          রিমুভ
+                        </button>
+                      </div>
+
+                      {/* Live Native Audio Player */}
+                      <div className="pt-2 border-t border-slate-100">
+                        <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider block mb-1.5">অডিও প্রিভিউ শুনুন (Audio Preview)</span>
+                        <audio controls src={audioUrl} className="w-full h-10 rounded-lg outline-none" />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Form Fields for the Uploaded Audio */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-bold text-slate-700 mb-1.5">তিলাওয়াতের শিরোনাম (যেমন: সূরা আর-রহমান - সুললিত তিলাওয়াত)</label>
+                    <input
+                      type="text"
+                      value={audioTitle}
+                      onChange={(e) => setAudioTitle(e.target.value)}
+                      placeholder="যেমন: সূরা আর-রহমান (সম্পূর্ণ সূরা)"
+                      className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1.5">সূরা নির্বাচন করুন (Select Surah)</label>
+                    <select
+                      value={audioSurahNumber}
+                      onChange={(e) => setAudioSurahNumber(Number(e.target.value))}
+                      className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:border-emerald-500 cursor-pointer"
+                    >
+                      {ALL_SURAHS.map((s) => (
+                        <option key={s.number} value={s.number}>
+                          {s.number}. {s.name} ({s.englishName})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Direct Audio URL */}
+                  <div className="md:col-span-3">
+                    <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                      ডাইরেক্ট অডিও লিংক / অনলাইন স্ট্রিম (Direct Audio URL - MP3 / AAC / OGG)
+                    </label>
+                    <input
+                      type="text"
+                      value={audioUrl}
+                      onChange={(e) => {
+                        setAudioUrl(e.target.value);
+                        setSelectedAudioBlob(null);
+                      }}
+                      placeholder="গ্যালারি থেকে সিলেক্ট করলে অটোমেটিক সেট হবে অথবা সরাসরি MP3 লিংক দিন (https://...mp3)"
+                      className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-mono focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1.5">ক্বারীর নাম (Reciter)</label>
+                    <input
+                      type="text"
+                      value={audioQariName}
+                      onChange={(e) => setAudioQariName(e.target.value)}
+                      placeholder="যেমন: শায়খ মিশারী রশিদ / শায়খ সাউদ আল-জুমাহ"
+                      className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+
+                  {/* Qari Image Upload & Selection directly from Gallery or Presets */}
+                  <div className="md:col-span-3 p-4 bg-slate-50/90 rounded-2xl border border-slate-200/80 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                        <Camera className="w-4 h-4 text-emerald-600" />
+                        <span>ক্বারীর ছবি (গ্যালারি থেকে সরাসরি ফটো আপলোড অথবা ইমেজ URL)</span>
+                      </label>
+                      {audioQariImage && (
+                        <button
+                          type="button"
+                          onClick={() => setAudioQariImage('')}
+                          className="text-rose-500 hover:text-rose-700 text-xs font-bold px-2 py-0.5 bg-rose-50 rounded-lg cursor-pointer"
+                        >
+                          ছবি রিমুভ
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row items-center gap-3">
+                      {/* Direct Gallery Upload Button */}
+                      <label className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs cursor-pointer flex items-center justify-center gap-2 whitespace-nowrap shadow-md shadow-emerald-600/20 transition-all active:scale-95">
+                        <Upload className="w-4 h-4" />
+                        <span>{audioQariImage ? 'গ্যালারি থেকে অন্য ছবি বদলান' : 'গ্যালারি থেকে ক্বারীর ছবি আপলোড করুন'}</span>
+                        <input 
+                          type="file" 
+                          accept="image/*" 
+                          onChange={handleAudioQariImageUpload} 
+                          className="hidden" 
+                        />
+                      </label>
+
+                      {/* URL text input */}
+                      <div className="flex-1 w-full">
+                        <input
+                          type="text"
+                          value={audioQariImage}
+                          onChange={(e) => setAudioQariImage(e.target.value)}
+                          placeholder="অথবা ছবির অনলাইন লিঙ্ক (URL) দিন: https://..."
+                          className="w-full px-4 py-3 rounded-2xl bg-white border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:border-emerald-500"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Quick Reciter Presets */}
+                    <div className="pt-2 border-t border-slate-200/60">
+                      <span className="text-[11px] font-bold text-slate-500 block mb-1.5">
+                        জনপ্রিয় ক্বারী নির্বাচন করুন (নাম ও ডিফল্ট ছবি এক ক্লিকে সেট হবে):
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {ALL_QARIS.slice(0, 8).map((q) => (
+                          <button
+                            key={q.id}
+                            type="button"
+                            onClick={() => {
+                              setAudioQariName(q.name);
+                              setAudioQariId(q.id);
+                              if (q.image) setAudioQariImage(q.image);
+                            }}
+                            className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all border cursor-pointer ${
+                              audioQariName === q.name 
+                                ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm' 
+                                : 'bg-white text-slate-700 border-slate-200 hover:border-emerald-300 hover:bg-emerald-50'
+                            }`}
+                          >
+                            {q.name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Image Preview */}
+                    {audioQariImage && (
+                      <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-emerald-300 shadow-sm">
+                        <img 
+                          src={audioQariImage} 
+                          alt="ক্বারীর ছবি প্রিভিউ" 
+                          className="w-14 h-14 rounded-2xl object-cover border border-emerald-200 shadow-sm flex-shrink-0" 
+                        />
+                        <div className="min-w-0">
+                          <p className="text-xs font-black text-emerald-900">ক্বারীর ছবি সফলভাবে সংযুক্ত হয়েছে</p>
+                          <p className="text-[11px] text-slate-500 truncate">তিলাওয়াত প্লেয়ার এবং তালিকায় এই ছবি সুন্দরভাবে প্রদর্শিত হবে</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1.5">অডিও দৈর্ঘ্য (Duration)</label>
+                    <input
+                      type="text"
+                      value={audioDuration}
+                      onChange={(e) => setAudioDuration(e.target.value)}
+                      placeholder="যেমন: 04:30"
+                      className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1.5">ফাইল সাইজ (Size)</label>
+                    <input
+                      type="text"
+                      value={audioFileSize}
+                      onChange={(e) => setAudioFileSize(e.target.value)}
+                      placeholder="যেমন: 3.2 MB"
+                      className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div className="md:col-span-3">
+                    <label className="block text-xs font-bold text-slate-700 mb-1.5">সংক্ষিপ্ত বিবরণ / নোট (ঐচ্ছিক)</label>
+                    <input
+                      type="text"
+                      value={audioDescription}
+                      onChange={(e) => setAudioDescription(e.target.value)}
+                      placeholder="যেমন: মন জুড়ানো তারাবীহ তিলাওয়াত অথবা বিশেষ খতমে কুরআন"
+                      className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Status Message Banner */}
+                {saveAudioStatus && (
+                  <div className={`p-4 rounded-2xl text-xs font-bold flex items-center gap-2.5 ${
+                    saveAudioStatus.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' :
+                    saveAudioStatus.type === 'error' ? 'bg-rose-50 text-rose-800 border border-rose-200' :
+                    'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                  }`}>
+                    {saveAudioStatus.type === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
+                    {saveAudioStatus.type === 'error' && <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />}
+                    {saveAudioStatus.type === 'info' && <Loader2 className="w-4 h-4 text-emerald-600 animate-spin shrink-0" />}
+                    <span>{saveAudioStatus.message}</span>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+                  {editingAudio && (
+                    <button
+                      onClick={() => {
+                        setEditingAudio(null);
+                        setAudioTitle('');
+                        setAudioUrl('');
+                        setSelectedAudioBlob(null);
+                        setAudioFileName('');
+                        setAudioFileSize('');
+                        setAudioDuration('');
+                        setAudioDescription('');
+                      }}
+                      className="px-6 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm transition-all cursor-pointer"
+                    >
+                      বাতিল
+                    </button>
+                  )}
+                  <button
+                    disabled={isSavingAudio}
+                    onClick={handleSaveCustomAudio}
+                    className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white font-bold text-sm shadow-lg shadow-emerald-600/20 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    {isSavingAudio ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>অডিও সেভ হচ্ছে...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4" />
+                        <span>{editingAudio ? 'আপডেট করুন' : 'অডিও তিলাওয়াত সেভ করুন'}</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* -------------------- SUB-TAB 2: UPLOADED AUDIOS LIST -------------------- */}
+            {qariSubTab === 'audio_list' && (() => {
+              const displayAudios = settings.customTilawatAudios !== undefined ? settings.customTilawatAudios : DEFAULT_TILAWAT_AUDIOS;
+              return (
+                <div className="bg-white p-6 md:p-8 rounded-[32px] border border-slate-100 shadow-sm space-y-6">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                      <Music className="w-5 h-5 text-emerald-600" />
+                      <span>তিলাওয়াত অডিও তালিকা ({displayAudios.length} টি)</span>
+                    </h3>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <button
+                        onClick={handleResetDemoAudios}
+                        className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-xl font-bold text-xs flex items-center gap-1 cursor-pointer transition-all"
+                        title="সকল ডেমো অডিও মূল অবস্থায় ফেরত আনুন"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5 text-amber-600" />
+                        <span>ডেমো অডিও রিসেট</span>
+                      </button>
+                      <button
+                        onClick={handleClearAllAudios}
+                        className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl font-bold text-xs flex items-center gap-1 cursor-pointer transition-all"
+                        title="তালিকা থেকে সকল অডিও মুছে ফেলুন"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                        <span>সকল অডিও ডিলিট</span>
+                      </button>
+                      <button
+                        onClick={() => setQariSubTab('upload_audio')}
+                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-md transition-all cursor-pointer"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>নতুন অডিও আপলোড করুন</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {displayAudios.length === 0 ? (
+                    <div className="text-center py-16 bg-slate-50 rounded-3xl border border-slate-100 space-y-3">
+                      <div className="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-600 mx-auto flex items-center justify-center">
+                        <Music className="w-7 h-7" />
+                      </div>
+                      <h4 className="text-base font-bold text-slate-800">কোনো অডিও উপলব্ধ নেই</h4>
+                      <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                        উপরে থাকা "নতুন অডিও আপলোড করুন" বাটনে ক্লিক করে আপনার ডিভাইস থেকে যেকোনো তিলাওয়াতের MP3 ফাইল আপলোড করতে পারবেন।
+                      </p>
+                      <button
+                        onClick={() => setQariSubTab('upload_audio')}
+                        className="mt-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs cursor-pointer"
+                      >
+                        এখনই অডিও আপলোড করুন
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {displayAudios.map((audio) => (
+                        <div 
+                          key={audio.id}
+                          className="p-5 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col justify-between gap-4 hover:border-emerald-300 transition-all shadow-sm"
+                        >
+                          <div className="space-y-2.5">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <button
+                                  onClick={() => togglePreviewAudio(audio.id, audio.audioUrl)}
+                                  className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all shadow-md flex-shrink-0 cursor-pointer ${
+                                    playingAudioId === audio.id 
+                                      ? 'bg-emerald-600 text-white animate-pulse' 
+                                      : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+                                  }`}
+                                >
+                                  {playingAudioId === audio.id ? (
+                                    <Pause className="w-5 h-5 fill-white" />
+                                  ) : (
+                                    <Play className="w-5 h-5 fill-current ml-0.5" />
+                                  )}
+                                </button>
+                                
+                                {audio.qariImage ? (
+                                  <img
+                                    src={audio.qariImage}
+                                    alt={audio.qariName}
+                                    className="w-10 h-10 rounded-xl object-cover border border-emerald-200 shadow-sm flex-shrink-0"
+                                  />
+                                ) : null}
+
+                                <div className="min-w-0">
+                                  <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-black text-[10px]">
+                                    সূরা {audio.surahNumber}: {audio.surahName}
+                                  </span>
+                                  <h4 className="font-black text-slate-900 text-sm mt-1 truncate">{audio.title}</h4>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="p-2.5 bg-white rounded-xl border border-slate-100 space-y-1 text-xs">
+                              <div className="flex items-center justify-between text-slate-600 font-semibold">
+                                <span>ক্বারী:</span>
+                                <span className="font-bold text-emerald-700">{audio.qariName}</span>
+                              </div>
+                              <div className="flex items-center justify-between text-slate-500 text-[11px]">
+                                <span>দৈর্ঘ্য: {audio.duration || '03:30'}</span>
+                                <span>সাইজ: {audio.fileSize || '2.5 MB'}</span>
+                              </div>
+                              {audio.description && (
+                                <p className="text-[11px] text-slate-500 pt-1 border-t border-slate-100 italic">"{audio.description}"</p>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between pt-2 border-t border-slate-200/60">
+                            <span className="text-[10px] text-slate-400 font-medium">আপলোড: {audio.uploadedAt || 'ডিফল্ট'}</span>
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                onClick={() => handleEditCustomAudio(audio)}
+                                className="px-3 py-1.5 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100 font-bold text-xs transition-all flex items-center gap-1 cursor-pointer"
+                              >
+                                <Edit className="w-3.5 h-3.5" />
+                                <span>এডিট</span>
+                              </button>
+                              <button
+                                onClick={() => handleDeleteCustomAudio(audio.id)}
+                                className="px-3 py-1.5 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 font-bold text-xs transition-all flex items-center gap-1 cursor-pointer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                <span>ডিলিট</span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* -------------------- SUB-TAB 3: QARI PROFILES & PHOTOS -------------------- */}
+            {qariSubTab === 'qaris' && (
+              <div className="space-y-6">
+                {/* Add / Edit Qari Form */}
+                <div className="bg-white p-6 md:p-8 rounded-[32px] border border-slate-100 shadow-sm space-y-6">
+                  <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                    <Headset className="w-5 h-5 text-emerald-600" />
+                    {editingQari ? 'ক্বারী তথ্য এডিট করুন' : 'নতুন ক্বারী যুক্ত করুন'}
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1.5">ক্বারীর নাম (যেমন: শায়খ আব্দুর রহমান)</label>
+                      <input
+                        type="text"
+                        value={qariName}
+                        onChange={(e) => setQariName(e.target.value)}
+                        placeholder="যেমন: শায়খ আব্দুর রহমান আস-সুদাইস"
+                        className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1.5">আরবি নাম (Arabic Name)</label>
+                      <input
+                        type="text"
+                        value={qariArabicName}
+                        onChange={(e) => setQariArabicName(e.target.value)}
+                        placeholder="যেমন: عبد الرحمن السديس"
+                        className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1.5">দেশ (Country)</label>
+                      <input
+                        type="text"
+                        value={qariCountry}
+                        onChange={(e) => setQariCountry(e.target.value)}
+                        placeholder="সৌদি আরব / মিশর"
+                        className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-xs font-bold text-slate-700 mb-1.5">অডিও সার্ভার ইউআরএল (MP3Quran Server Stream URL)</label>
+                      <input
+                        type="text"
+                        value={qariServerUrl}
+                        onChange={(e) => setQariServerUrl(e.target.value)}
+                        placeholder="যেমন: https://server9.mp3quran.net/m_sds"
+                        className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-mono focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1.5">Listens Count</label>
+                      <input
+                        type="text"
+                        value={qariListens}
+                        onChange={(e) => setQariListens(e.target.value)}
+                        placeholder="যেমন: 5.2M listens"
+                        className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-xs font-bold text-slate-700 mb-1.5">সংক্ষিপ্ত পরিচিতি (Bio)</label>
+                      <input
+                        type="text"
+                        value={qariBio}
+                        onChange={(e) => setQariBio(e.target.value)}
+                        placeholder="যেমন: মসজিদের হারামের প্রখ্যাত ইমাম।"
+                        className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                    <div className="md:col-span-3">
+                      <label className="block text-xs font-bold text-slate-700 mb-1.5">ক্বারীর ছবি (গ্যালারি থেকে সরাসরি ফটো আপলোড অথবা ইমেজ URL)</label>
+                      <div className="flex flex-col sm:flex-row items-center gap-4">
+                        <input
+                          type="text"
+                          value={qariImage}
+                          onChange={(e) => setQariImage(e.target.value)}
+                          placeholder="https://... অথবা গ্যালারি থেকে ছবি সিলেক্ট করুন"
+                          className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:border-emerald-500"
+                        />
+                        <label className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm cursor-pointer flex items-center justify-center gap-2 whitespace-nowrap shadow-md transition-all">
+                          <Upload className="w-4 h-4" />
+                          <span>গ্যালারি থেকে ছবি দিন</span>
+                          <input type="file" accept="image/*" onChange={handleQariImageUpload} className="hidden" />
+                        </label>
+                      </div>
+                      {qariImage && (
+                        <div className="mt-3 flex items-center gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-200 w-fit">
+                          <img src={qariImage} alt="Preview" className="w-12 h-12 rounded-xl object-cover" />
+                          <span className="text-xs font-bold text-slate-600">ছবি সফলভাবে সংযুক্ত হয়েছে</span>
+                          <button onClick={() => setQariImage('')} className="text-rose-500 hover:text-rose-700 text-xs font-bold ml-2">রিমুভ</button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+                    {editingQari && (
+                      <button
+                        onClick={() => {
+                          setEditingQari(null);
+                          setQariName('');
+                          setQariArabicName('');
+                          setQariImage('');
+                          setQariServerUrl('');
+                          setQariBio('');
+                        }}
+                        className="px-6 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm transition-all"
+                      >
+                        বাতিল
+                      </button>
+                    )}
+                    <button
+                      onClick={handleSaveQari}
+                      className="px-8 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-lg shadow-emerald-600/20 transition-all flex items-center gap-2"
+                    >
+                      <Save className="w-4 h-4" />
+                      <span>{editingQari ? 'আপডেট করুন' : 'নতুন ক্বারী সেভ করুন'}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Qaris List Cards */}
+                <div className="bg-white p-6 md:p-8 rounded-[32px] border border-slate-100 shadow-sm space-y-6">
+                  <h3 className="text-lg font-black text-slate-900 flex items-center justify-between">
+                    <span>সকল ক্বারী তালিকা ({((settings.customQaris && settings.customQaris.length > 0) ? settings.customQaris : ALL_QARIS).length} জন)</span>
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {((settings.customQaris && settings.customQaris.length > 0) ? settings.customQaris : ALL_QARIS).map((qari: any) => (
+                      <div key={qari.id} className="p-5 rounded-2xl bg-slate-50 border border-slate-200/80 flex flex-col justify-between gap-4 hover:border-emerald-300 transition-all shadow-sm">
+                        <div className="flex items-start gap-3">
+                          {qari.image ? (
+                            <img src={qari.image} alt={qari.name} className="w-14 h-14 rounded-2xl object-cover border-2 border-emerald-500 shadow-md flex-shrink-0" />
+                          ) : (
+                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-700 to-teal-900 text-white flex items-center justify-center font-black text-lg shadow-md flex-shrink-0">
+                              {qari.initials || qari.name.slice(0, 2).toUpperCase()}
+                            </div>
+                          )}
+                          <div className="min-w-0 flex-grow">
+                            <h4 className="font-black text-slate-900 text-sm truncate">{qari.name}</h4>
+                            <p className="text-xs text-emerald-600 font-bold arabic-font">{qari.arabicName}</p>
+                            <p className="text-[11px] text-slate-500 font-semibold mt-0.5">{qari.country} • {qari.listens || '1.0M listens'}</p>
+                          </div>
+                        </div>
+                        <p className="text-xs text-slate-600 line-clamp-2 bg-white p-2.5 rounded-xl border border-slate-100">{qari.bio || 'তিলাওয়াত কারী'}</p>
+                        <div className="flex items-center justify-between pt-2 border-t border-slate-200/60">
+                          <span className="text-[10px] font-mono text-slate-400 truncate max-w-[150px]">{qari.serverUrl}</span>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => {
+                                handleEditQari(qari);
+                                setQariSubTab('qaris');
+                              }}
+                              className="px-3 py-1.5 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100 font-bold text-xs transition-all flex items-center gap-1"
+                            >
+                              <Edit className="w-3.5 h-3.5" />
+                              <span>এডিট</span>
+                            </button>
+                            <button
+                              onClick={() => handleDeleteQari(qari.id)}
+                              className="px-3 py-1.5 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 font-bold text-xs transition-all flex items-center gap-1"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span>ডিলিট</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* -------------------- SUB-TAB 4: BACKGROUND SOUND MANAGEMENT -------------------- */}
+            {qariSubTab === 'background_sounds' && (
+              <div className="space-y-6">
+                {/* Form Card */}
+                <div className="bg-white p-6 md:p-8 rounded-[32px] border border-slate-100 shadow-sm space-y-6">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                    <div>
+                      <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                        <CloudRain className="w-5 h-5 text-emerald-600" />
+                        <span>{editingBgSound ? 'ব্যাকগ্রাউন্ড সাউন্ড তথ্য আপডেট করুন' : 'নতুন ব্যাকগ্রাউন্ড সাউন্ড যোগ করুন'}</span>
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        তেলাওয়াতের সাথে আলাদাভাবে প্লে করার জন্য আপনার পছন্দের অডিও সাউন্ড (বৃষ্টি, মহাসমুদ্র, বাতাস ইত্যাদি) যোগ ও ম্যানেজ করুন।
+                      </p>
+                    </div>
+                    {editingBgSound && (
+                      <button
+                        onClick={() => {
+                          setEditingBgSound(null);
+                          setBgSoundName('');
+                          setBgSoundBengaliName('');
+                          setBgSoundIcon('🌧️');
+                          setBgSoundAudioUrl('');
+                          setBgSoundDefaultVol(0.25);
+                        }}
+                        className="px-3 py-1.5 rounded-xl bg-amber-100 text-amber-800 text-xs font-bold cursor-pointer hover:bg-amber-200 transition-all"
+                      >
+                        এডিট বাতিল করুন ✕
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1.5">ইংরেজি নাম (Name) *</label>
+                      <input
+                        type="text"
+                        value={bgSoundName}
+                        onChange={(e) => setBgSoundName(e.target.value)}
+                        placeholder="যেমন: Light Rain"
+                        className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1.5">বাংলা নাম (Bengali Name) *</label>
+                      <input
+                        type="text"
+                        value={bgSoundBengaliName}
+                        onChange={(e) => setBgSoundBengaliName(e.target.value)}
+                        placeholder="যেমন: হালকা বৃষ্টি"
+                        className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1.5">আইকন / ইমোজি (Emoji Icon)</label>
+                      <input
+                        type="text"
+                        value={bgSoundIcon}
+                        onChange={(e) => setBgSoundIcon(e.target.value)}
+                        placeholder="যেমন: 🌧️, 🌊, 🍃, 🐦"
+                        className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:border-emerald-500 text-center text-xl"
+                      />
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <label className="block text-xs font-bold text-slate-700 mb-1.5">অডিও ফাইল লিংক / স্ট্রিম URL *</label>
+                      <input
+                        type="text"
+                        value={bgSoundAudioUrl}
+                        onChange={(e) => setBgSoundAudioUrl(e.target.value)}
+                        placeholder="https://actions.google.com/sounds/v1/weather/rain_drizzle.ogg"
+                        className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-mono focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1.5">ডিফল্ট ভলিউম (0.01 - 1.00)</label>
+                      <input
+                        type="number"
+                        min={0}
+                        max={1}
+                        step={0.05}
+                        value={bgSoundDefaultVol}
+                        onChange={(e) => setBgSoundDefaultVol(Number(e.target.value))}
+                        className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+                    <button
+                      onClick={handleSaveBgSound}
+                      className="px-8 py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-lg shadow-emerald-600/20 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <Save className="w-4 h-4" />
+                      <span>{editingBgSound ? 'তথ্য আপডেট করুন' : 'নতুন সাউন্ড সেভ করুন'}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Background Sounds List */}
+                <div className="bg-white p-6 md:p-8 rounded-[32px] border border-slate-100 shadow-sm space-y-6">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                    <div>
+                      <h3 className="text-lg font-black text-slate-900">
+                        সকল ব্যাকগ্রাউন্ড সাউন্ড তালিকা ({((settings.customBackgroundSounds && settings.customBackgroundSounds.length > 0) ? settings.customBackgroundSounds : BACKGROUND_SOUNDS_LIST).length}টি)
+                      </h3>
+                      <p className="text-xs text-slate-500">ইউজারদের তেলাওয়াত সেকশনে ব্যাকগ্রাউন্ড প্লেয়ারে এই সাউন্ডগুলো প্রদর্শন হবে।</p>
+                    </div>
+                    <button
+                      onClick={handleResetDefaultBgSounds}
+                      className="px-4 py-2.5 bg-slate-100 hover:bg-amber-100 text-slate-700 hover:text-amber-900 font-bold text-xs rounded-2xl transition-all cursor-pointer flex items-center gap-1.5"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      <span>২৪টি ডিফল্ট রিসেট করুন</span>
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {((settings.customBackgroundSounds && settings.customBackgroundSounds.length > 0) ? settings.customBackgroundSounds : BACKGROUND_SOUNDS_LIST).map((sound) => (
+                      <div key={sound.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-between gap-3 hover:border-emerald-400 transition-all shadow-sm">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className="text-3xl p-2 bg-white rounded-2xl border border-slate-200 shrink-0">{sound.icon}</span>
+                          <div className="min-w-0">
+                            <h4 className="font-black text-slate-900 text-sm truncate">{sound.name}</h4>
+                            <p className="text-xs text-emerald-700 font-bold truncate">{sound.bengaliName}</p>
+                            <p className="text-[10px] font-mono text-slate-400 truncate max-w-[140px]">{sound.audioUrl}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            onClick={() => {
+                              setEditingBgSound(sound);
+                              setBgSoundName(sound.name);
+                              setBgSoundBengaliName(sound.bengaliName);
+                              setBgSoundIcon(sound.icon);
+                              setBgSoundAudioUrl(sound.audioUrl);
+                              setBgSoundDefaultVol(sound.defaultVolume ?? 0.25);
+                            }}
+                            className="p-2 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100 font-bold text-xs transition-all cursor-pointer"
+                            title="এডিট"
+                          >
+                            <Edit className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteBgSound(sound.id)}
+                            className="p-2 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 font-bold text-xs transition-all cursor-pointer"
+                            title="ডিলিট"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {qariSubTab === 'banners' && (
+              <div className="space-y-6">
+                {/* Form Card */}
+                <div className="bg-white p-6 md:p-8 rounded-[32px] border border-slate-100 shadow-sm space-y-6">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                    <div>
+                      <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                        <ImageIcon className="w-5 h-5 text-emerald-600" />
+                        <span>নতুন তিলাওয়াত ব্যানার যোগ করুন</span>
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        তিলাওয়াত লাইব্রেরির মূল হিরো সেকশনে ৩ সেকেন্ড পর পর স্লাইডিং করার জন্য ব্যানার সেট করুন।
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="block text-xs font-bold text-slate-700">ব্যানার শিরোনাম (যেমন: ক্বারীর নাম বা সূরা নাম) <span className="text-rose-500">*</span></label>
+                      <input
+                        type="text"
+                        value={bannerTitle}
+                        onChange={(e) => setBannerTitle(e.target.value)}
+                        placeholder="শায়খ সাউদ আল-জুমাহ"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-2.5 px-4 text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all shadow-inner"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="block text-xs font-bold text-slate-700">উপ-শিরোনাম (যেমন: গভীর ও মধুর কণ্ঠে)</label>
+                      <input
+                        type="text"
+                        value={bannerSubtitle}
+                        onChange={(e) => setBannerSubtitle(e.target.value)}
+                        placeholder="মধুর ও গভীর কণ্ঠে তিলাওয়াত"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-2.5 px-4 text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all shadow-inner"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="block text-xs font-bold text-slate-700">ক্বারী সিলেক্ট করুন</label>
+                      <select
+                        value={bannerQariId}
+                        onChange={(e) => setBannerQariId(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-2.5 px-4 text-xs font-medium text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all shadow-inner"
+                      >
+                        <option value="">ডিফল্ট সিলেক্ট করুন...</option>
+                        {ALL_QARIS.map(q => (
+                          <option key={q.id} value={q.id}>{q.name}</option>
+                        ))}
+                        {(settings.customQaris || []).map((q: any) => (
+                          <option key={q.id} value={q.id}>{q.name} (Custom)</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="block text-xs font-bold text-slate-700">সূরা সিলেক্ট করুন (ক্লিক করলে এই সূরা চলবে)</label>
+                      <select
+                        value={bannerSurahNumber}
+                        onChange={(e) => setBannerSurahNumber(Number(e.target.value))}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-2.5 px-4 text-xs font-medium text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all shadow-inner"
+                      >
+                        {ALL_SURAHS.map(s => (
+                          <option key={s.number} value={s.number}>{s.name} (সূরা নম্বর {s.number})</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="block text-xs font-bold text-slate-700">কাস্টম অডিও তিলাওয়াত আইডি (ঐচ্ছিক - যদি আপলোডকৃত কাস্টম অডিও চালাতে চান)</label>
+                      <select
+                        value={bannerCustomAudioId}
+                        onChange={(e) => setBannerCustomAudioId(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-2.5 px-4 text-xs font-medium text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all shadow-inner"
+                      >
+                        <option value="">কোনোটিই নয় (সূরা অনুযায়ী চলবে)</option>
+                        {(settings.customTilawatAudios || []).map((aud: any) => (
+                          <option key={aud.id} value={aud.id}>{aud.surahName} - {aud.qariName}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="block text-xs font-bold text-slate-700">ব্যানার ব্যাকগ্রাউন্ড ইমেজ ইউআরএল (ঐচ্ছিক)</label>
+                      <input
+                        type="text"
+                        value={bannerImageUrl}
+                        onChange={(e) => setBannerImageUrl(e.target.value)}
+                        placeholder="https://images.unsplash.com/photo-..."
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-2.5 px-4 text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all shadow-inner"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-3 pt-2">
+                    <button
+                      onClick={handleAddTilawatBanner}
+                      className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-2xl transition-all cursor-pointer shadow-md shadow-emerald-600/20"
+                    >
+                      যুক্ত করুন
+                    </button>
+                  </div>
+                </div>
+
+                {/* Banner List Table/Cards */}
+                <div className="bg-white p-6 md:p-8 rounded-[32px] border border-slate-100 shadow-sm space-y-6">
+                  <h3 className="text-lg font-black text-slate-900 border-b border-slate-100 pb-4">
+                    চলতি তিলাওয়াত ব্যানার তালিকা ({settings.tilawatBanners?.length || 0}টি)
+                  </h3>
+
+                  {(!settings.tilawatBanners || settings.tilawatBanners.length === 0) ? (
+                    <div className="text-center py-8 text-slate-400 text-sm">
+                      কোনো তিলাওয়াত ব্যানার যুক্ত করা নেই। ডিফল্ট ব্যানারগুলো প্রদর্শিত হচ্ছে।
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {settings.tilawatBanners.map((banner) => {
+                        const linkedQari = ALL_QARIS.find(q => q.id === banner.qariId) || (settings.customQaris || []).find((q: any) => q.id === banner.qariId);
+                        const linkedSurah = ALL_SURAHS.find(s => s.number === banner.surahNumber);
+                        return (
+                          <div key={banner.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-3">
+                              {banner.imageUrl ? (
+                                <img src={banner.imageUrl} alt={banner.title} className="w-12 h-12 rounded-xl object-cover border border-slate-200 shadow-sm" />
+                              ) : (
+                                <div className="w-12 h-12 bg-emerald-100 text-emerald-800 rounded-xl flex items-center justify-center font-bold text-xs">
+                                  QT
+                                </div>
+                              )}
+                              <div>
+                                <h4 className="font-bold text-slate-900 text-sm">{banner.title}</h4>
+                                <p className="text-xs text-slate-500">{banner.subtitle}</p>
+                                <p className="text-[10px] text-emerald-600 font-bold mt-0.5">
+                                  ক্বারী: {linkedQari?.name || banner.qariId} | সূরা: {linkedSurah?.name || `নম্বর ${banner.surahNumber}`}
+                                </p>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => handleDeleteTilawatBanner(banner.id)}
+                              className="p-2 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl transition-all cursor-pointer"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {adminTab === 'video_tilawat' && (
+          <div className="space-y-6 animate-fade-in">
+            {/* Video Preview Modal in Admin */}
+            {previewingVideoItem && (
+              <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+                <div className="bg-[#111827] w-full max-w-2xl rounded-3xl border border-slate-700 shadow-2xl overflow-hidden animate-in fade-in">
+                  <div className="p-4 bg-slate-900 border-b border-slate-800 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Film className="w-5 h-5 text-indigo-400" />
+                      <h4 className="text-sm font-black text-white truncate">{previewingVideoItem.title}</h4>
+                    </div>
+                    <button
+                      onClick={() => setPreviewingVideoItem(null)}
+                      className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center cursor-pointer"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="aspect-video w-full bg-black flex items-center justify-center">
+                    <video
+                      src={previewingVideoItem.videoUrl}
+                      controls
+                      autoPlay
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div className="p-4 bg-slate-900/90 text-xs text-slate-300 space-y-1">
+                    <div className="flex items-center justify-between font-bold">
+                      <span className="text-indigo-400">{previewingVideoItem.qariName}</span>
+                      <span className="font-mono text-slate-400">সময়সীমা: {previewingVideoItem.duration}</span>
+                    </div>
+                    <p className="text-[11px] text-slate-400">{previewingVideoItem.description}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Header */}
+            <div className="bg-gradient-to-r from-indigo-950 via-purple-950 to-slate-900 p-6 md:p-8 rounded-[32px] text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 border border-indigo-900/40">
+              <div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-bold mb-3 border border-indigo-500/30">
+                  <Video className="w-4 h-4" />
+                  <span>সরাসরি ভিডিও তিলাওয়াত আপলোড</span>
+                </div>
+                <h2 className="text-xl md:text-2xl font-black mb-2">ভিডিও তিলাওয়াত ফাইল ম্যানেজমেন্ট</h2>
+                <p className="text-indigo-200/80 text-xs md:text-sm max-w-2xl leading-relaxed">
+                  মোবাইল বা কম্পিউটারের গ্যালারি থেকে সরাসরি MP4/WebM ভিডিও ফাইল সিলেক্ট ও আপলোড করুন। কোনো ইউটিউব লিংকের প্রয়োজন নেই।
+                </p>
+              </div>
+
+              {/* Sub-Tab Switcher */}
+              <div className="flex items-center gap-2 bg-slate-950/60 p-1.5 rounded-2xl border border-indigo-500/20 flex-wrap">
+                <button
+                  onClick={() => setVideoSubTab('upload_video')}
+                  className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all cursor-pointer ${
+                    videoSubTab === 'upload_video'
+                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                      : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
+                  }`}
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>ভিডিও ফাইল আপলোড</span>
+                </button>
+                <button
+                  onClick={() => setVideoSubTab('video_list')}
+                  className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all cursor-pointer ${
+                    videoSubTab === 'video_list'
+                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                      : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
+                  }`}
+                >
+                  <Film className="w-3.5 h-3.5" />
+                  <span>আপলোডকৃত ভিডিও ({(settings.customVideoTilawats !== undefined ? settings.customVideoTilawats : DEFAULT_VIDEO_TILAWATS).length})</span>
+                </button>
+              </div>
+            </div>
+
+            {/* -------------------- SUB-TAB 1: DIRECT VIDEO UPLOAD FORM -------------------- */}
+            {videoSubTab === 'upload_video' && (
+              <div className="bg-white p-6 md:p-8 rounded-[32px] border border-slate-100 shadow-sm space-y-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                    <Video className="w-5 h-5 text-indigo-600" />
+                    <span>{editingVideo ? 'ভিডিও তিলাওয়াত তথ্য আপডেট করুন' : 'সরাসরি নতুন ভিডিও ফাইল আপলোড করুন'}</span>
+                  </h3>
+                  {editingVideo && (
+                    <button
+                      onClick={() => {
+                        setEditingVideo(null);
+                        setVideoTitle('');
+                        setVideoUrl('');
+                        setVideoThumbnailUrl('');
+                      }}
+                      className="px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-bold cursor-pointer"
+                    >
+                      এডিট বাতিল করুন ✕
+                    </button>
+                  )}
+                </div>
+
+                {/* Video Upload Dropzone */}
+                <div className="border-2 border-dashed border-indigo-300 bg-indigo-50/40 rounded-3xl p-6 md:p-8 text-center space-y-4 hover:border-indigo-500 transition-all">
+                  <div className="w-16 h-16 rounded-2xl bg-indigo-100 text-indigo-700 mx-auto flex items-center justify-center shadow-inner">
+                    <Video className="w-8 h-8" />
+                  </div>
+                  <div>
+                    <h4 className="font-black text-slate-900 text-base">ডিভাইস / গ্যালারি থেকে সরাসরি ভিডিও ফাইল সিলেক্ট করুন</h4>
+                    <p className="text-xs text-slate-500 mt-1">MP4, WebM, MKV বা যেকোনো ভিডিও ফাইল সাপোর্ট করে (১ ঘণ্টা থেকে ১.৫ ঘণ্টা)</p>
+                  </div>
+
+                  <div className="flex items-center justify-center gap-3">
+                    <label className="px-6 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs cursor-pointer shadow-lg shadow-indigo-200 transition-all inline-flex items-center gap-2">
+                      <Upload className="w-4 h-4" />
+                      <span>{isVideoFileUploading ? 'ফাইল প্রসেস হচ্ছে...' : 'গ্যালারি থেকে ভিডিও ফাইল সিলেক্ট করুন'}</span>
+                      <input
+                        type="file"
+                        accept="video/*"
+                        onChange={handleVideoFileUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+
+                  {videoFileName && (
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-100/80 text-indigo-900 text-xs font-bold border border-indigo-200">
+                      <CheckCircle2 className="w-4 h-4 text-indigo-600" />
+                      <span>সিলেক্টেড ফাইল: {videoFileName}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Form Fields Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  
+                  {/* Video Title */}
+                  <div className="lg:col-span-2">
+                    <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                      ভিডিওর শিরোনাম (Video Title) *
+                    </label>
+                    <input
+                      type="text"
+                      value={videoTitle}
+                      onChange={(e) => setVideoTitle(e.target.value)}
+                      placeholder="যেমন: সূরা আর-রহমান মন জুড়ানো তিলাওয়াত"
+                      className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+
+                  {/* Duration */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                      ভিডিওর সময়সীমা (Duration)
+                    </label>
+                    <input
+                      type="text"
+                      value={videoDuration}
+                      onChange={(e) => setVideoDuration(e.target.value)}
+                      placeholder="যেমন: 28:15 অথবা 1:25:40"
+                      className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+
+                  {/* Qari Name */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                      ক্বারীর নাম (Qari Name) *
+                    </label>
+                    <input
+                      type="text"
+                      value={videoQariName}
+                      onChange={(e) => setVideoQariName(e.target.value)}
+                      placeholder="যেমন: ক্বারী ঈদী শাবান আফিফ"
+                      className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+
+                  {/* Surah Name */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                      সূরার নাম / বিষয় (Surah Name)
+                    </label>
+                    <input
+                      type="text"
+                      value={videoSurahName}
+                      onChange={(e) => setVideoSurahName(e.target.value)}
+                      placeholder="যেমন: সূরা আর-রহমান"
+                      className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+
+                  {/* Category */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                      ক্যাটাগরি (Category)
+                    </label>
+                    <select
+                      value={videoCategory}
+                      onChange={(e) => setVideoCategory(e.target.value as any)}
+                      className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:border-indigo-500"
+                    >
+                      <option value="popular">🔥 জনপ্রিয় (Popular)</option>
+                      <option value="recent">⚡ সাম্প্রতিক (Recent)</option>
+                      <option value="all">📖 সাধারণ / সকল (All)</option>
+                    </select>
+                  </div>
+
+                  {/* Direct Video File / Source Link */}
+                  <div className="lg:col-span-3">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs font-bold text-slate-700">
+                        ভিডিও ফাইল ডাটা / ডাইরেক্ট ভিডিও লিংক (Direct Video File / URL)
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setVideoUrl('https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4');
+                          if (!videoTitle) setVideoTitle('সূরা আর-রহমান সুললিত তিলাওয়াত');
+                          if (!videoFileName) setVideoFileName('sample_hd_tilawat.mp4');
+                        }}
+                        className="text-[11px] text-indigo-600 hover:text-indigo-800 font-bold underline cursor-pointer"
+                      >
+                        ⚡ নমুনা এইচডি ভিডিও লিংক সেট করুন
+                      </button>
+                    </div>
+                    <input
+                      type="text"
+                      value={videoUrl}
+                      onChange={(e) => setVideoUrl(e.target.value)}
+                      placeholder="গ্যালারি থেকে ফাইল সিলেক্ট করলে অটোমেটিক সেট হবে অথবা ডাইরেক্ট MP4 / অনলাইন লিংক দিন"
+                      className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-mono focus:outline-none focus:border-indigo-500"
+                    />
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      💡 যেকোনো ডাইরেক্ট MP4 লিংক, ক্লাউড ভিডিও লিংক অথবা ডিভাইস গ্যালারির ফাইল সাপোর্ট করে।
+                    </p>
+                  </div>
+
+                  {/* Thumbnail Upload from Gallery + URL */}
+                  <div className="lg:col-span-2">
+                    <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                      ভিডিও থাম্বনেইল ছবি (Thumbnail Image)
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={videoThumbnailUrl}
+                        onChange={(e) => setVideoThumbnailUrl(e.target.value)}
+                        placeholder="অটো ফ্রেম ক্যাপচার অথবা গ্যালারি থেকে সিলেক্ট করুন"
+                        className="flex-1 px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:border-indigo-500"
+                      />
+                      <label className="px-4 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs cursor-pointer flex items-center gap-1.5 whitespace-nowrap">
+                        <Camera className="w-4 h-4 text-indigo-400" />
+                        <span>{isThumbnailUploading ? 'আপলোড হচ্ছে...' : 'গ্যালারি'}</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleThumbnailImageUpload}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Qari Image Upload from Gallery */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                      ক্বারীর প্রোফাইল ছবি (Qari Photo)
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={videoQariImage}
+                        onChange={(e) => setVideoQariImage(e.target.value)}
+                        placeholder="https://... বা গ্যালারি"
+                        className="flex-1 px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:border-indigo-500"
+                      />
+                      <label className="px-3.5 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs cursor-pointer flex items-center gap-1.5 whitespace-nowrap">
+                        <Camera className="w-4 h-4 text-emerald-400" />
+                        <span>{isQariImageUploading ? '...' : 'গ্যালারি'}</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleQariImageUploadForVideo}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Views Count */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                      ভিউ সংখ্যা (Views Count)
+                    </label>
+                    <input
+                      type="text"
+                      value={videoViews}
+                      onChange={(e) => setVideoViews(e.target.value)}
+                      placeholder="যেমন: 1.2M ভিউ"
+                      className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+
+                  {/* Description */}
+                  <div className="lg:col-span-2">
+                    <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                      ভিডিওর বিবরণ (Description)
+                    </label>
+                    <textarea
+                      value={videoDescription}
+                      onChange={(e) => setVideoDescription(e.target.value)}
+                      placeholder="ভিডিও তিলাওয়াতের সংক্ষিপ্ত বিবরণ..."
+                      rows={2}
+                      className="w-full px-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+
+                </div>
+
+                {/* Status Message Banner */}
+                {saveVideoStatus && (
+                  <div className={`p-4 rounded-2xl text-xs font-bold flex items-center gap-2.5 ${
+                    saveVideoStatus.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' :
+                    saveVideoStatus.type === 'error' ? 'bg-rose-50 text-rose-800 border border-rose-200' :
+                    'bg-indigo-50 text-indigo-800 border border-indigo-200'
+                  }`}>
+                    {saveVideoStatus.type === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
+                    {saveVideoStatus.type === 'error' && <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />}
+                    {saveVideoStatus.type === 'info' && <Loader2 className="w-4 h-4 text-indigo-600 animate-spin shrink-0" />}
+                    <span>{saveVideoStatus.message}</span>
+                  </div>
+                )}
+
+                {/* Save Button */}
+                <div className="pt-2 flex items-center justify-end gap-3">
+                  <button
+                    type="button"
+                    disabled={isSavingVideo}
+                    onClick={handleSaveVideoTilawat}
+                    className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white font-black text-sm shadow-xl shadow-indigo-200 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    {isSavingVideo ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>ভিডিও সেভ হচ্ছে...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4" />
+                        <span>{editingVideo ? 'আপডেট সম্পন্ন করুন' : 'ভিডিও তিলাওয়াত সেভ করুন'}</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* -------------------- SUB-TAB 2: UPLOADED VIDEOS LIST -------------------- */}
+            {videoSubTab === 'video_list' && (() => {
+              const displayVideos = settings.customVideoTilawats !== undefined ? settings.customVideoTilawats : DEFAULT_VIDEO_TILAWATS;
+              return (
+                <div className="bg-white p-6 md:p-8 rounded-[32px] border border-slate-100 shadow-sm space-y-6">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                      <Film className="w-5 h-5 text-indigo-600" />
+                      <span>ভিডিও তিলাওয়াত তালিকা ({displayVideos.length} টি)</span>
+                    </h3>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <button
+                        onClick={handleResetDemoVideos}
+                        className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-xl font-bold text-xs flex items-center gap-1 cursor-pointer transition-all"
+                        title="সকল ডেমো ভিডিও মূল অবস্থায় ফেরত আনুন"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5 text-amber-600" />
+                        <span>ডেমো ভিডিও রিসেট</span>
+                      </button>
+                      <button
+                        onClick={handleClearAllVideos}
+                        className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl font-bold text-xs flex items-center gap-1 cursor-pointer transition-all"
+                        title="তালিকা থেকে সকল ভিডিও মুছে ফেলুন"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                        <span>সকল ভিডিও ডিলিট</span>
+                      </button>
+                      <button
+                        onClick={() => setVideoSubTab('upload_video')}
+                        className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-md transition-all"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>নতুন ভিডিও যোগ করুন</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {displayVideos.length === 0 ? (
+                    <div className="p-12 text-center bg-slate-50 rounded-3xl border border-slate-200/60 space-y-3">
+                      <div className="w-16 h-16 rounded-2xl bg-indigo-100 text-indigo-600 mx-auto flex items-center justify-center">
+                        <Film className="w-8 h-8" />
+                      </div>
+                      <h4 className="font-black text-slate-800 text-base">কোনো ভিডিও তিলাওয়াত উপলব্ধ নেই</h4>
+                      <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                        'নতুন ভিডিও যোগ করুন' বাটনে ক্লিক করে আপনার গ্যালারির যেকোনো দীর্ঘ তিলাওয়াত ভিডিও আপলোড করতে পারেন।
+                      </p>
+                      <button
+                        onClick={() => setVideoSubTab('upload_video')}
+                        className="px-6 py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-xs cursor-pointer shadow-md"
+                      >
+                        নতুন ভিডিও আপলোড করুন
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {displayVideos.map((video) => (
+                        <div
+                          key={video.id}
+                          className="bg-slate-50 rounded-2xl border border-slate-200/80 p-4 space-y-3 hover:border-indigo-400 transition-all shadow-xs flex flex-col justify-between"
+                        >
+                          <div className="space-y-3">
+                            {/* Thumbnail preview */}
+                            <div className="relative aspect-video rounded-xl overflow-hidden bg-slate-900 border border-slate-200">
+                              <img
+                                src={video.thumbnailUrl || 'https://images.unsplash.com/photo-1564769625905-50e93615e769?w=400&auto=format&fit=crop&q=80'}
+                                alt={video.title}
+                                className="w-full h-full object-cover"
+                              />
+                              <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded bg-black/80 text-white text-[10px] font-mono font-bold">
+                                {video.duration}
+                              </div>
+                              <button
+                                onClick={() => setPreviewingVideoItem(video)}
+                                className="absolute inset-0 bg-black/30 hover:bg-black/50 transition-colors flex items-center justify-center text-white cursor-pointer"
+                                title="প্লে করুন"
+                              >
+                                <div className="w-10 h-10 rounded-full bg-indigo-600/90 flex items-center justify-center shadow-lg">
+                                  <Play className="w-5 h-5 fill-current ml-0.5" />
+                                </div>
+                              </button>
+                            </div>
+
+                            {/* Info */}
+                            <div>
+                              <div className="flex items-center gap-1.5 text-[10px] font-bold text-indigo-600 mb-1">
+                                <span>📖 {video.surahName || 'সূরা'}</span>
+                                <span>•</span>
+                                <span>{video.views || '1.0M ভিউ'}</span>
+                              </div>
+                              <h4 className="text-sm font-black text-slate-900 line-clamp-2 leading-snug">
+                                {video.title}
+                              </h4>
+                              <div className="flex items-center gap-2 mt-2 pt-2 border-t border-slate-200/60">
+                                {video.qariImage ? (
+                                  <img src={video.qariImage} alt={video.qariName} className="w-6 h-6 rounded-full object-cover" />
+                                ) : null}
+                                <span className="text-xs font-bold text-slate-700 truncate">{video.qariName}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Actions */}
+                          <div className="flex items-center justify-between pt-2 border-t border-slate-200/60">
+                            <span className="text-[10px] text-slate-400 font-mono">
+                              {video.category === 'popular' ? '🔥 জনপ্রিয়' : '⚡ সাম্প্রতিক'}
+                            </span>
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                onClick={() => handleEditVideoTilawat(video)}
+                                className="px-3 py-1.5 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100 font-bold text-xs transition-all flex items-center gap-1 cursor-pointer"
+                              >
+                                <Edit className="w-3.5 h-3.5" />
+                                <span>এডিট</span>
+                              </button>
+                              <button
+                                onClick={() => handleDeleteVideoTilawat(video.id)}
+                                className="px-3 py-1.5 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 font-bold text-xs transition-all flex items-center gap-1 cursor-pointer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                <span>ডিলিট</span>
+                              </button>
+                            </div>
+                          </div>
+
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+          </div>
+        )}
+
+        {adminTab === 'analytics' && (
+          <div className="space-y-6 animate-fade-in">
+            <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 p-6 md:p-8 rounded-[32px] text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
+              <div>
+                <h2 className="text-xl md:text-2xl font-black mb-2">ইউজার অ্যানালিটিক্স ও সেকশন ব্যবহার</h2>
+                <p className="text-blue-200/80 text-xs md:text-sm max-w-2xl leading-relaxed">
+                  কোন ইউজার কোন সেকশন সবচেয়ে বেশি ব্যবহার করছে এবং ওভারঅল অ্যাপ এঙ্গেজমেন্ট স্ট্যাটিস্টিকস রিয়েল-টাইমে পর্যবেক্ষণ করুন।
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-white p-6 rounded-[24px] border border-slate-100 shadow-sm space-y-2">
+                <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">মোট ইউজার</p>
+                <p className="text-3xl font-black text-slate-900">{usersList.length} জন</p>
+                <div className="text-[11px] text-emerald-600 font-bold">100% অ্যাক্টিভ ডাটাবেজ</div>
+              </div>
+              <div className="bg-white p-6 rounded-[24px] border border-slate-100 shadow-sm space-y-2">
+                <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">মোট অর্ডার</p>
+                <p className="text-3xl font-black text-slate-900">{orders.length} টি</p>
+                <div className="text-[11px] text-blue-600 font-bold">সফল ট্রানজ্যাকশন</div>
+              </div>
+              <div className="bg-white p-6 rounded-[24px] border border-slate-100 shadow-sm space-y-2">
+                <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">অ্যাক্টিভ অফার প্যাক</p>
+                <p className="text-3xl font-black text-slate-900">{packs.length} টি</p>
+                <div className="text-[11px] text-purple-600 font-bold">ডাইনামিক ক্যাটালগ</div>
+              </div>
+              <div className="bg-white p-6 rounded-[24px] border border-slate-100 shadow-sm space-y-2">
+                <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">তিলাওয়াত ক্বারী</p>
+                <p className="text-3xl font-black text-slate-900">{((settings.customQaris && settings.customQaris.length > 0) ? settings.customQaris : ALL_QARIS).length} জন</p>
+                <div className="text-[11px] text-emerald-600 font-bold">প্রিমিয়াম অডিও</div>
+              </div>
+            </div>
+
+            {/* Section Usage Breakdown */}
+            <div className="bg-white p-6 md:p-8 rounded-[32px] border border-slate-100 shadow-sm space-y-6">
+              <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-blue-600" />
+                <span>সেকশন অনুযায়ী ইউজার ব্যবহার (Section Usage Analytics)</span>
+              </h3>
+              <div className="space-y-4">
+                {[
+                  { name: 'ইন্টারনেট ও মিনিট প্যাক স্টোর (Store)', count: 420, percentage: 85, color: 'bg-emerald-600' },
+                  { name: 'তিলাওয়াত লাইব্রেরি ও অডিও (Tilawat & Quran)', count: 310, percentage: 65, color: 'bg-blue-600' },
+                  { name: 'অর্ডার ট্র্যাকিং ও হিস্ট্রি (Order Tracking)', count: 240, percentage: 50, color: 'bg-purple-600' },
+                  { name: 'ওয়াইফাই ব্রডব্যান্ড প্যাকেজ (WiFi Broadband)', count: 180, percentage: 40, color: 'bg-amber-600' },
+                  { name: 'অ্যাড মানি ও ব্যালেন্স রিচার্জ (Add Money)', count: 150, percentage: 35, color: 'bg-rose-600' },
+                ].map((sec, idx) => (
+                  <div key={idx} className="space-y-1.5 p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                    <div className="flex items-center justify-between text-xs font-bold text-slate-800">
+                      <span>{sec.name}</span>
+                      <span className="font-black text-emerald-600">{sec.count} বার ব্যবহৃত</span>
+                    </div>
+                    <div className="w-full h-3 rounded-full bg-slate-200/80 overflow-hidden">
+                      <div className={`h-full rounded-full ${sec.color}`} style={{ width: `${sec.percentage}%` }}></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Users Activity Table */}
+            <div className="bg-white p-6 md:p-8 rounded-[32px] border border-slate-100 shadow-sm space-y-6">
+              <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                <Users className="w-5 h-5 text-emerald-600" />
+                <span>সাম্প্রতিক ইউজার অ্যাক্টিভিটি লগ (User Activity Logs)</span>
+              </h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-100 text-[11px] font-black text-slate-400 uppercase tracking-wider">
+                      <th className="py-3 px-4">ইউজার নাম</th>
+                      <th className="py-3 px-4">মোবাইল নম্বর</th>
+                      <th className="py-3 px-4">রোল</th>
+                      <th className="py-3 px-4">ব্যালেন্স</th>
+                      <th className="py-3 px-4">যোগদানের তারিখ</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-xs font-semibold text-slate-700">
+                    {usersList.slice(0, 10).map((u: any, idx: number) => (
+                      <tr key={u.uid || idx} className="hover:bg-slate-50 transition-colors">
+                        <td className="py-3.5 px-4 font-bold text-slate-900">{u.displayName || 'ব্যবহারকারী'}</td>
+                        <td className="py-3.5 px-4 font-mono">{u.phone || 'N/A'}</td>
+                        <td className="py-3.5 px-4">
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${u.role === 'admin' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-700'}`}>
+                            {u.role === 'admin' ? 'অ্যাডমিন' : 'ইউজার'}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 font-bold text-emerald-600">৳{u.balance || 0}</td>
+                        <td className="py-3.5 px-4 text-slate-500">{u.createdAt || 'সম্প্রতি'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}

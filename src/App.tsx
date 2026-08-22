@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'motion/react';
-import { AppTab, DataPack, Order, Operator, PackCategory, SiteSettings, WifiPackage } from './types';
+import { AppTab, DataPack, Order, Operator, PackCategory, SiteSettings, WifiPackage, VideoTilawat, CustomTilawatAudio, TilawatBanner } from './types';
 import { INITIAL_PACKS } from './data';
 import { initOneSignal, triggerPaymentNotification, triggerRechargeNotification } from './lib/onesignalService';
 import NotificationPromptModal from './components/NotificationPromptModal';
@@ -225,7 +225,7 @@ const DEFAULT_SETTINGS: SiteSettings = {
   marqueeText: 'ফাহিম ইন্টারনেট-এ স্বাগতম! আমাদের নতুন সুপারফাস্ট কাস্টম অফার ও ডাবল ক্যাশব্যাক ভাউচারগুলো চেক করুন। ১ মিনিটেই ১০০% রিচার্জ গ্যারান্টি!',
   bannerImages: [],
   promoBanners: [],
-  topBannerImage: 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=2070&auto=format&fit=crop',
+  topBannerImage: 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=60&w=800&auto=format&fit=crop',
   offerBanners: [],
   apkUrl: 'https://github.com/free122055/fahim-internet-apk/releases/download/v1.0/fahim-internet.apk',
   adminNumber: '01618599077',
@@ -262,10 +262,22 @@ export default function App() {
   });
 
   const [navigationStack, setNavigationStack] = useState<AppTab[]>(['homepage']);
+  const navigationStackRef = useRef<AppTab[]>(navigationStack);
+  useEffect(() => {
+    navigationStackRef.current = navigationStack;
+  }, [navigationStack]);
 
-  // Android-like back navigation
+  // Android-like back navigation & Capacitor Native Back Integration
   useEffect(() => {
     const handlePopState = (event: PopStateEvent) => {
+      // 1. Check if any modal or drawer or full-screen overlay is open first
+      const activeModal = document.querySelector('[role="dialog"], .fixed.inset-0.z-50, [data-modal]');
+      if (activeModal) {
+        // Prevent default navigation and let modals close if they have handlers, or push back state
+        window.history.pushState(null, '', window.location.href);
+        return;
+      }
+
       if (navigationStack.length > 1) {
         event.preventDefault();
         const newStack = [...navigationStack];
@@ -276,18 +288,52 @@ export default function App() {
       } else {
         // At root, show exit confirmation
         if (confirm("আপনি কি অ্যাপ থেকে বের হয়ে যেতে চান?")) {
-          // This is technically not possible in a standard browser environment
-          // but we can close the window or handle it as per requirement.
           window.close();
         } else {
-          // Push state back to prevent exit
           window.history.pushState(null, '', window.location.href);
         }
       }
     };
 
     window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
+
+    // Capacitor Native Android Back Button Listener Integration
+    let capacitorListener: any = null;
+    import('@capacitor/app').then(({ App }) => {
+      App.addListener('backButton', (data) => {
+        // Priority 1: Modals, Dialogs or Drawers open check
+        const activeModal = document.querySelector('[role="dialog"], .fixed.inset-0.z-50, [data-modal], .drawer-open');
+        if (activeModal) {
+          // Find close button or click backdrop if possible, or let custom listeners handle
+          return;
+        }
+
+        // Priority 2: Navigation stack handling
+        if (navigationStack.length > 1) {
+          const newStack = [...navigationStack];
+          newStack.pop();
+          const previousTab = newStack[newStack.length - 1];
+          setNavigationStack(newStack);
+          setActiveTab(previousTab);
+        } else {
+          // Root screen exit confirmation
+          if (confirm("আপনি কি অ্যাপ থেকে বের হয়ে যেতে চান?")) {
+            App.exitApp();
+          }
+        }
+      }).then(listener => {
+        capacitorListener = listener;
+      });
+    }).catch(() => {
+      // Not running in Capacitor environment, web popstate handles it
+    });
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      if (capacitorListener && typeof capacitorListener.remove === 'function') {
+        capacitorListener.remove();
+      }
+    };
   }, [navigationStack]);
 
   const navigateTo = (tab: AppTab) => {
@@ -602,41 +648,7 @@ export default function App() {
     }
   };
 
-  // Typewriter effect states
-  const typewriterPhrases = ["দ্রুততম ইন্টারনেট", "সবচেয়ে কম মূল্যে", "সুপার ফাস্ট স্পিডে", "১ মিনিটে ডেলিভারি!"];
-  const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0);
-  const [typedText, setTypedText] = useState("");
-  const [isDeletingPhrase, setIsDeletingPhrase] = useState(false);
-
-  useEffect(() => {
-    const fullPhrase = typewriterPhrases[currentPhraseIndex];
-    let delay = isDeletingPhrase ? 50 : 100;
-
-    if (!isDeletingPhrase && typedText === fullPhrase) {
-      delay = 1800;
-    } else if (isDeletingPhrase && typedText === "") {
-      delay = 300;
-    }
-
-    const timer = setTimeout(() => {
-      if (!isDeletingPhrase) {
-        if (typedText === fullPhrase) {
-          setIsDeletingPhrase(true);
-        } else {
-          setTypedText(fullPhrase.substring(0, typedText.length + 1));
-        }
-      } else {
-        if (typedText === "") {
-          setIsDeletingPhrase(false);
-          setCurrentPhraseIndex((prev) => (prev + 1) % typewriterPhrases.length);
-        } else {
-          setTypedText(fullPhrase.substring(0, typedText.length - 1));
-        }
-      }
-    }, delay);
-
-    return () => clearTimeout(timer);
-  }, [typedText, isDeletingPhrase, currentPhraseIndex]);
+  // Unused typewriter effect removed to prevent severe continuous re-rendering performance lag.
 
   // Filters State for the Custom Offer Search Engine
   const [showAllPacks, setShowAllPacks] = useState(false);
@@ -1376,6 +1388,44 @@ export default function App() {
         }
       }, (err) => console.warn('Logos listener failed:', err));
 
+      const unsubCustomQaris = onSnapshot(doc(db, 'settings', 'site_custom_qaris'), (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (data && Array.isArray(data.list)) {
+            setSettings(prev => ({ ...prev, customQaris: data.list }));
+          }
+        }
+      }, (err) => console.warn('Custom Qaris listener warning:', err));
+
+      const unsubTilawatBanners = onSnapshot(doc(db, 'settings', 'site_tilawat_banners'), (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (data && Array.isArray(data.list)) {
+            setSettings(prev => ({ ...prev, tilawatBanners: data.list }));
+          }
+        }
+      }, (err) => console.warn('Tilawat Banners listener warning:', err));
+
+      const unsubVideoTilawats = onSnapshot(collection(db, 'video_tilawats'), (snapshot) => {
+        if (!snapshot.empty) {
+          const firestoreVideos: VideoTilawat[] = [];
+          snapshot.forEach((docSnap) => {
+            firestoreVideos.push({ id: docSnap.id, ...docSnap.data() } as VideoTilawat);
+          });
+          setSettings(prev => ({ ...prev, customVideoTilawats: firestoreVideos }));
+        }
+      }, (err) => console.warn('Video tilawats listener warning:', err));
+
+      const unsubAudioTilawats = onSnapshot(collection(db, 'audio_tilawats'), (snapshot) => {
+        if (!snapshot.empty) {
+          const firestoreAudios: CustomTilawatAudio[] = [];
+          snapshot.forEach((docSnap) => {
+            firestoreAudios.push({ id: docSnap.id, ...docSnap.data() } as CustomTilawatAudio);
+          });
+          setSettings(prev => ({ ...prev, customTilawatAudios: firestoreAudios }));
+        }
+      }, (err) => console.warn('Audio tilawats listener warning:', err));
+
       const unsubVideo = onSnapshot(doc(db, 'settings', 'video_config'), (docSnap) => {
         if (docSnap.exists()) {
           const videoData = docSnap.data();
@@ -1418,6 +1468,10 @@ export default function App() {
         unsubSettings();
         unsubSettingsBanners();
         unsubSettingsLogos();
+        unsubCustomQaris();
+        unsubTilawatBanners();
+        unsubVideoTilawats();
+        unsubAudioTilawats();
         unsubVideo();
         unsubWifi();
       };
@@ -1565,32 +1619,110 @@ export default function App() {
 
   // Update Site Settings (Admin)
   const handleUpdateSettings = async (updatedSettings: SiteSettings) => {
+    // 0. Update local state immediately for instant feedback
+    setSettings(updatedSettings);
     try {
+      localStorage.setItem('fahim_site_settings', JSON.stringify(updatedSettings));
+    } catch (e) {
+      console.warn('Local storage save warning:', e);
+    }
+
+    try {
+      const sanitizeObj = (obj: any) => {
+        return JSON.parse(JSON.stringify(obj || {}, (_, v) => (v === undefined ? null : v)));
+      };
+
       const { 
         tutorialVideoUrl, 
         topBannerImage, offerBanners, promoBanners, quickServiceIcons, bannerImages,
         gpLogoUrl, robiLogoUrl, blLogoUrl, airtelLogoUrl, teletalkLogoUrl,
         bkashLogoUrl, nagadLogoUrl, rocketLogoUrl, upayLogoUrl, cellfinLogoUrl, bankingLogoUrl, logoUrl,
+        customVideoTilawats, customTilawatAudios, customQaris, tilawatBanners,
         ...configSettings 
       } = updatedSettings;
       
-      // 1. Save general settings (Without large images)
-      await setDoc(doc(db, 'settings', 'site_config'), configSettings);
+      // 1. Save general settings (Lightweight doc, strictly kept under Firestore 1MB quota)
+      await setDoc(doc(db, 'settings', 'site_config'), sanitizeObj(configSettings));
 
       // 1.5 Save images to separate docs to avoid 1MB limit
-      await setDoc(doc(db, 'settings', 'site_images_banners'), { 
+      await setDoc(doc(db, 'settings', 'site_images_banners'), sanitizeObj({ 
         topBannerImage: topBannerImage || '', 
         offerBanners: offerBanners || [], 
         promoBanners: promoBanners || [], 
         quickServiceIcons: quickServiceIcons || {},
         bannerImages: bannerImages || []
-      }, { merge: true });
+      }), { merge: true });
 
-      await setDoc(doc(db, 'settings', 'site_images_logos'), { 
+      await setDoc(doc(db, 'settings', 'site_images_logos'), sanitizeObj({ 
         gpLogoUrl: gpLogoUrl || '', robiLogoUrl: robiLogoUrl || '', blLogoUrl: blLogoUrl || '', airtelLogoUrl: airtelLogoUrl || '', teletalkLogoUrl: teletalkLogoUrl || '',
         bkashLogoUrl: bkashLogoUrl || '', nagadLogoUrl: nagadLogoUrl || '', rocketLogoUrl: rocketLogoUrl || '', upayLogoUrl: upayLogoUrl || '', cellfinLogoUrl: cellfinLogoUrl || '', bankingLogoUrl: bankingLogoUrl || '',
         logoUrl: logoUrl || ''
-      }, { merge: true });
+      }), { merge: true });
+
+      // 1.6 Save Custom Qaris in dedicated doc
+      if (customQaris !== undefined) {
+        await setDoc(doc(db, 'settings', 'site_custom_qaris'), sanitizeObj({
+          list: customQaris || []
+        }), { merge: true });
+      }
+
+      // Save Tilawat Banners in dedicated doc
+      if (tilawatBanners !== undefined) {
+        await setDoc(doc(db, 'settings', 'site_tilawat_banners'), sanitizeObj({
+          list: tilawatBanners || []
+        }), { merge: true });
+      }
+
+      // 1.7 Save Video Tilawats to individual documents in video_tilawats collection
+      if (customVideoTilawats !== undefined) {
+        try {
+          const existingDocsSnap = await getDocs(collection(db, 'video_tilawats'));
+          const currentIds = new Set(customVideoTilawats.map(v => v.id));
+          
+          // Delete removed video records from collection
+          const deletePromises = existingDocsSnap.docs
+            .filter(d => !currentIds.has(d.id))
+            .map(d => deleteDoc(d.ref));
+          await Promise.all(deletePromises);
+
+          // Upsert current video records
+          const upsertPromises = customVideoTilawats.map(async (v) => {
+            const vData = { ...v };
+            // Ensure no single document exceeds Firestore limits if video URL is a massive base64 string
+            if (vData.videoUrl && vData.videoUrl.length > 500000) {
+              vData.videoUrl = vData.videoUrl.substring(0, 1000) + '...[local_blob]';
+            }
+            return setDoc(doc(db, 'video_tilawats', v.id), sanitizeObj(vData));
+          });
+          await Promise.all(upsertPromises);
+        } catch (vErr) {
+          console.warn('Video tilawats sync warning:', vErr);
+        }
+      }
+
+      // 1.8 Save Audio Tilawats to individual documents in audio_tilawats collection
+      if (customTilawatAudios !== undefined) {
+        try {
+          const existingAudioSnap = await getDocs(collection(db, 'audio_tilawats'));
+          const currentAudioIds = new Set(customTilawatAudios.map(a => a.id));
+
+          const deleteAudioPromises = existingAudioSnap.docs
+            .filter(d => !currentAudioIds.has(d.id))
+            .map(d => deleteDoc(d.ref));
+          await Promise.all(deleteAudioPromises);
+
+          const upsertAudioPromises = customTilawatAudios.map(async (a) => {
+            const aData = { ...a };
+            if (aData.audioUrl && aData.audioUrl.length > 500000) {
+              aData.audioUrl = aData.audioUrl.substring(0, 1000) + '...[local_blob]';
+            }
+            return setDoc(doc(db, 'audio_tilawats', a.id), sanitizeObj(aData));
+          });
+          await Promise.all(upsertAudioPromises);
+        } catch (aErr) {
+          console.warn('Audio tilawats sync warning:', aErr);
+        }
+      }
       
       // 2. Save video settings with automatic chunking support
       if (tutorialVideoUrl !== undefined && tutorialVideoUrl !== 'lazy' && tutorialVideoUrl !== 'chunked') {

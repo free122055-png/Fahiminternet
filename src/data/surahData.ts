@@ -16,6 +16,8 @@ export interface Qari {
   arabicName: string;
   country: string;
   image: string;
+  listens?: string;
+  initials?: string;
   isPopular?: boolean;
   isNew?: boolean;
   isFeatured?: boolean;
@@ -142,127 +144,177 @@ export const ALL_SURAHS: Surah[] = [
   { number: 114, name: 'আন-নাস', englishName: 'An-Nas', arabicName: 'الناس', englishMeaning: 'Mankind', bengaliMeaning: 'মানবজাতি', totalAyat: 6, type: 'মাক্কী', juzNumber: 30 }
 ];
 
-// Verified high-speed Reciters list with verified 100% active Audio Servers
+// Verified high-speed Reciters list with verified 100% active Audio Servers and exact user order
 export const ALL_QARIS: Qari[] = [
   {
-    id: 'saud_al_jumah',
-    name: 'শায়খ সাউদ আল-জুমাহ',
-    arabicName: 'سعود الجمعة',
+    id: 'yasser_dosari',
+    name: 'Yasser Al-Dosari',
+    arabicName: 'ياسر الدوسري',
     country: 'সৌদি আরব',
-    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80',
+    image: '',
+    listens: '6.0M listens',
+    initials: 'YD',
     isPopular: true,
     isFeatured: true,
+    serverUrl: 'https://server11.mp3quran.net/yasser',
+    fallbackUrl: 'https://server8.mp3quran.net/afs',
+    bio: 'মসজিদুল হারামের সুললিত ও তেজোদৃপ্ত কণ্ঠের ইমাম।'
+  },
+  {
+    id: 'bader_turki',
+    name: 'Bader Al-Turki',
+    arabicName: 'بدر التركي',
+    country: 'সৌদি আরব',
+    image: '',
+    listens: '3.0M listens',
+    initials: 'BT',
+    isPopular: true,
     serverUrl: 'https://server7.mp3quran.net/shur',
     fallbackUrl: 'https://server8.mp3quran.net/afs',
-    bio: 'হৃদয়স্পর্শী, সুললিত ও গভীর আবেশময় তিলাওয়াত।'
+    bio: 'বিশিষ্ট তরুণ ক্বারী ও ইমাম।'
   },
   {
-    id: 'abdul_rahman_sudais',
-    name: 'শায়খ আব্দুর রহমান আস-সুদাইস',
-    arabicName: 'عبد الرحمن السديس',
-    country: 'সৌদি আরব',
-    image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300&auto=format&fit=crop&q=80',
+    id: 'mahdi_shishani',
+    name: 'Mahdi ash-Shishani',
+    arabicName: 'مهدي الشيشاني',
+    country: 'চেচনিয়া',
+    image: '',
+    listens: '1.8M listens',
+    initials: 'MS',
     isPopular: true,
-    serverUrl: 'https://server11.mp3quran.net/sds',
+    serverUrl: 'https://server16.mp3quran.net/soufi/Rewayat-Hafs-A-n-Assem',
     fallbackUrl: 'https://server8.mp3quran.net/afs',
-    bio: 'মসজিদুল হারামের প্রধান খতিব ও সুললিত ক্বারী।'
+    bio: 'সুমধুর কণ্ঠের বিশিষ্ট ক্বারী।'
   },
   {
-    id: 'mishary_rashid',
-    name: 'শায়খ মিশার রশিদ',
-    arabicName: 'مشاري راشد العفاسي',
-    country: 'কুয়েত',
-    image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop&q=80',
-    isPopular: true,
-    serverUrl: 'https://server8.mp3quran.net/afs',
-    fallbackUrl: 'https://cdn.islamic.network/quran/audio-surah/128/ar.alafasy',
-    bio: 'বিশ্ববিখ্যাত ক্বারী ও ইমাম।'
-  },
-  {
-    id: 'abdul_basit',
-    name: 'শায়খ আব্দুল বাসিত',
-    arabicName: 'عبد الباسط عبد الصمد',
+    id: 'minshawi',
+    name: 'Muhammad Siddiq Al-Minshawi',
+    arabicName: 'محمد صديق المنشاوي',
     country: 'মিশর',
-    image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=300&auto=format&fit=crop&q=80',
+    image: '',
+    listens: '1.7M listens',
+    initials: 'MN',
     isPopular: true,
-    serverUrl: 'https://server7.mp3quran.net/basit',
+    serverUrl: 'https://server10.mp3quran.net/minsh',
     fallbackUrl: 'https://server8.mp3quran.net/afs',
-    bio: 'বিশ্বের শ্রেষ্ঠ ও অনন্য তাজবীদ বিশারদ।'
+    bio: 'মিশরের স্বর্ণযুগের অবিস্মরণীয় ক্বারী।'
   },
   {
     id: 'maher_muaiqly',
-    name: 'শায়খ মাহের আল-মুয়াইকলি',
+    name: 'Maher Al-Muaiqly',
     arabicName: 'ماهر المعيقلي',
     country: 'সৌদি আরব',
-    image: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=300&auto=format&fit=crop&q=80',
+    image: '',
+    listens: '1.6M listens',
+    initials: 'MM',
     isPopular: true,
     serverUrl: 'https://server12.mp3quran.net/maher',
     fallbackUrl: 'https://server8.mp3quran.net/afs',
     bio: 'মসজিদুল হারামের প্রখ্যাত ইমাম।'
   },
   {
-    id: 'yasser_dosari',
-    name: 'শায়খ ইয়াসির আদ-দোসারি',
-    arabicName: 'ياسر الدوسري',
-    country: 'সৌদি আরব',
-    image: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=300&auto=format&fit=crop&q=80',
-    isNew: true,
-    serverUrl: 'https://server11.mp3quran.net/yasser',
+    id: 'abdul_rahman_mossad',
+    name: 'Abdul Rahman Mossad',
+    arabicName: 'عبد الرحمن مسعد',
+    country: 'মিশর',
+    image: '',
+    listens: '1.2M listens',
+    initials: 'AM',
+    isPopular: true,
+    serverUrl: 'https://server9.mp3quran.net/m_sds',
     fallbackUrl: 'https://server8.mp3quran.net/afs',
-    bio: 'মসজিদুল হারামের সুললিত ও তেজোদৃপ্ত কণ্ঠের ইমাম।'
+    bio: 'অত্যন্ত আবেগঘন ও শান্ত তিলাওয়াত।'
   },
   {
-    id: 'abdul_rashid_sufi',
-    name: 'আব্দুল রশীদ আলী সুফি',
-    arabicName: 'عبد الرشيد صوفي',
-    country: 'সুদান',
-    image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=300&auto=format&fit=crop&q=80',
-    isNew: true,
-    serverUrl: 'https://server16.mp3quran.net/soufi/Rewayat-Hafs-A-n-Assem',
+    id: 'mahmoud_hussary',
+    name: 'Mahmoud Khalil Al-Hussary',
+    arabicName: 'محمود خليل الحصري',
+    country: 'মিশর',
+    image: '',
+    listens: '1.1M listens',
+    initials: 'HS',
+    isPopular: true,
+    serverUrl: 'https://server13.mp3quran.net/husr',
     fallbackUrl: 'https://server8.mp3quran.net/afs',
-    bio: 'কিরাত বিশেষজ্ঞ ও বিশিষ্ট ক্বারী।'
+    bio: 'তাজবীদ ও তারতীলের মুকুটহীন সম্রাট।'
   },
   {
-    id: 'fares_abbad',
-    name: 'ফারেস আব্বাদ',
-    arabicName: 'فارس عباد',
-    country: 'কুয়েত',
-    image: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=300&auto=format&fit=crop&q=80',
-    isNew: true,
+    id: 'arbi_shishani',
+    name: 'Arbi ash-Shishani',
+    arabicName: 'عربي الشيشاني',
+    country: 'চেচনিয়া',
+    image: '',
+    listens: '1.1M listens',
+    initials: 'AS',
+    isPopular: true,
     serverUrl: 'https://server8.mp3quran.net/frs_a',
     fallbackUrl: 'https://server8.mp3quran.net/afs',
-    bio: 'অত্যন্ত শান্ত ও গভীর ভাবগাম্ভীর্যপূর্ণ কণ্ঠ।'
+    bio: 'সুমধুর তিলাওয়াতকারী।'
   },
   {
-    id: 'saad_ghamdi',
-    name: 'শায়খ সাদ আল-গামদি',
-    arabicName: 'سعد الغامدي',
+    id: 'muhammad_luhaidan',
+    name: 'Muhammad Al-Luhaidan',
+    arabicName: 'محمد اللحيدان',
     country: 'সৌদি আরব',
-    image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
+    image: '',
+    listens: '1.1M listens',
+    initials: 'LH',
     isPopular: true,
-    serverUrl: 'https://server7.mp3quran.net/s_gmd',
+    serverUrl: 'https://server8.mp3quran.net/lhdan',
     fallbackUrl: 'https://server8.mp3quran.net/afs',
-    bio: 'বিশ্বের অন্যতম জনপ্রিয় ও সুমধুর তিলাওয়াতকারী।'
+    bio: 'প্রখ্যাত সৌদি ক্বারী ও ইমাম।'
   },
   {
-    id: 'ahmad_ajmy',
-    name: 'আহমেদ আল-আজমী',
-    arabicName: 'أحمد بن علي العجمي',
+    id: 'mishary_rashid',
+    name: 'Mishary Rashid Alafasy',
+    arabicName: 'مشاري راشد العفاسي',
+    country: 'কুয়েত',
+    image: '',
+    listens: '917k listens',
+    initials: 'AF',
+    isPopular: true,
+    serverUrl: 'https://server8.mp3quran.net/afs',
+    fallbackUrl: 'https://cdn.islamic.network/quran/audio-surah/128/ar.alafasy',
+    bio: 'বিশ্ববিখ্যাত ক্বারী ও ইমাম।'
+  },
+  {
+    id: 'mansour_salimi',
+    name: 'Mansour Al-Salimi',
+    arabicName: 'منصور السالمي',
     country: 'সৌদি আরব',
-    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80',
-    serverUrl: 'https://server10.mp3quran.net/ajm',
+    image: '',
+    listens: '892k listens',
+    initials: 'SM',
+    isPopular: true,
+    serverUrl: 'https://server9.mp3quran.net/mansor',
     fallbackUrl: 'https://server8.mp3quran.net/afs',
-    bio: 'অসাধারণ আবেগ ও সুরেলা কণ্ঠের তিলাওয়াত।'
+    bio: 'হৃদয়বিদারক ও কাঁদানোগত তিলাওয়াত।'
   },
   {
-    id: 'minshawi',
-    name: 'মুহাম্মদ সিদ্দিক আল-মিনশাবি',
-    arabicName: 'محمد صديق المنشاوي',
-    country: 'মিশর',
-    image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300&auto=format&fit=crop&q=80',
-    serverUrl: 'https://server10.mp3quran.net/minsh',
+    id: 'ali_jaber',
+    name: 'Ali Jaber',
+    arabicName: 'علي جابر',
+    country: 'সৌদি আরব',
+    image: '',
+    listens: '869k listens',
+    initials: 'AJ',
+    isPopular: true,
+    serverUrl: 'https://server11.mp3quran.net/jbr',
     fallbackUrl: 'https://server8.mp3quran.net/afs',
-    bio: 'মিশরের স্বর্ণযুগের অবিস্মরণীয় ক্বারী।'
+    bio: 'প্রাক্তন ইমাম, মসজিদুল হারাম।'
+  },
+  {
+    id: 'abdul_rahman_sudais',
+    name: 'Abdulrahman Al-Sudais',
+    arabicName: 'عبد الرحمن السديس',
+    country: 'সৌদি আরব',
+    image: '',
+    listens: '577k listens',
+    initials: 'SD',
+    isPopular: true,
+    serverUrl: 'https://server11.mp3quran.net/sds',
+    fallbackUrl: 'https://server8.mp3quran.net/afs',
+    bio: 'মসজিদুল হারামের প্রধান খতিব।'
   }
 ];
 

@@ -161,6 +161,81 @@
         "apiResponse": { "type": "string" }
       },
       "required": ["operator", "phone", "price", "status"]
+    },
+    "Student": {
+      "title": "Student",
+      "description": "Student academic and personal profile",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "photo": { "type": "string", "description": "Base64 or URL profile image" },
+        "name": { "type": "string" },
+        "nameEnglish": { "type": "string" },
+        "dob": { "type": "string" },
+        "gender": { "type": "string" },
+        "bloodGroup": { "type": "string" },
+        "nationality": { "type": "string" },
+        "birthPlace": { "type": "string" },
+        "mobile": { "type": "string" },
+        "mobileAlt": { "type": "string" },
+        "email": { "type": "string" },
+        "nidBirthId": { "type": "string" },
+        "religion": { "type": "string" },
+        "presentAddress": { "type": "string" },
+        "permanentAddress": { "type": "string" },
+        "studentId": { "type": "string" },
+        "admissionDate": { "type": "string" },
+        "class": { "type": "string" },
+        "section": { "type": "string" },
+        "roll": { "type": "string" },
+        "session": { "type": "string" },
+        "branch": { "type": "string" },
+        "shift": { "type": "string" },
+        "fatherName": { "type": "string" },
+        "fatherOccupation": { "type": "string" },
+        "fatherMobile": { "type": "string" },
+        "motherName": { "type": "string" },
+        "motherOccupation": { "type": "string" },
+        "motherMobile": { "type": "string" },
+        "localGuardianName": { "type": "string" },
+        "localGuardianRelation": { "type": "string" },
+        "localGuardianMobile": { "type": "string" },
+        "addToApp": { "type": "boolean" },
+        "admissionFee": { "type": "number" },
+        "monthlyFee": { "type": "number" },
+        "examFee": { "type": "number" },
+        "otherFee": { "type": "number" },
+        "discountPercentage": { "type": "number" },
+        "netMonthlyFee": { "type": "number" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "object" },
+        "institutionId": { "type": "string" }
+      },
+      "required": [
+        "name", "dob", "gender", "mobile", "presentAddress", "permanentAddress",
+        "studentId", "admissionDate", "class", "roll", "fatherName", "motherName"
+      ]
+    },
+    "AttendanceRecord": {
+      "title": "AttendanceRecord",
+      "description": "Daily attendance record for student or teacher",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "targetId": { "type": "string", "description": "Student ID or Teacher ID" },
+        "targetType": { "type": "string", "enum": ["student", "teacher"] },
+        "targetName": { "type": "string" },
+        "roll": { "type": "string" },
+        "date": { "type": "string", "format": "date", "description": "YYYY-MM-DD" },
+        "status": { "type": "string", "enum": ["present", "absent", "late"] },
+        "institutionId": { "type": "string" },
+        "class": { "type": "string" },
+        "section": { "type": "string" },
+        "department": { "type": "string" },
+        "updatedAt": { "type": "object" },
+        "updatedBy": { "type": "string" }
+      },
+      "required": ["id", "targetId", "targetType", "targetName", "date", "status", "institutionId"]
     }
   },
   "firestore": {
@@ -281,6 +356,14 @@
     "/reseller_sales/{saleId}": {
       "schema": "ServiceSale",
       "description": "Reseller telecom offer sales and commissions"
+    },
+    "/students/{studentId}": {
+      "schema": "Student",
+      "description": "Institution student profiles"
+    },
+    "/attendance/{recordId}": {
+      "schema": "AttendanceRecord",
+      "description": "Student or Teacher daily attendance logs"
     }
   }
 }

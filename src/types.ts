@@ -1,3 +1,5 @@
+import { Qari } from './data/surahData';
+
 export type AppTab = 'homepage' | 'store' | 'builder' | 'tracking' | 'admin' | 'privacy';
 
 export type Operator = 'GP' | 'Robi' | 'Airtel' | 'Banglalink' | 'Teletalk';
@@ -120,6 +122,70 @@ export interface SiteSettings {
   rechargeApiUsername?: string;
   rechargeAutoTrigger?: boolean;
   quickServiceIcons?: Record<string, string>;
+  customQaris?: Qari[];
+  customTilawatAudios?: CustomTilawatAudio[];
+  customVideoTilawats?: VideoTilawat[];
+  customBackgroundSounds?: BackgroundSoundItem[];
+  sectionUsageStats?: Record<string, number>;
+  tilawatBanners?: TilawatBanner[];
+}
+
+export interface TilawatBanner {
+  id: string;
+  title: string;
+  subtitle?: string;
+  qariId: string; // The ID of the Qari to link to
+  surahNumber?: number; // Optional surah number to play (1-114)
+  customAudioId?: string; // Optional custom uploaded audio ID to play instead of standard surah
+  imageUrl?: string; // Custom background/portrait image url
+}
+
+export interface BackgroundSoundItem {
+  id: string;
+  name: string;
+  bengaliName: string;
+  icon: string;
+  audioUrl: string;
+  defaultVolume?: number;
+  isMusic?: boolean;
+}
+
+export interface CustomTilawatAudio {
+  id: string;
+  title: string;
+  surahNumber: number;
+  surahName: string;
+  qariName: string;
+  qariId?: string;
+  qariImage?: string;
+  audioUrl: string;
+  audioFileName?: string;
+  duration?: string;
+  fileSize?: string;
+  uploadedAt: string;
+  description?: string;
+}
+
+export interface VideoTilawat {
+  id: string;
+  title: string;
+  surahNumber?: number;
+  surahName?: string;
+  qariName: string;
+  qariId?: string;
+  qariImage?: string;
+  videoUrl: string;
+  videoFileName?: string;
+  thumbnailUrl?: string;
+  duration: string;
+  views?: string;
+  uploadedTime?: string;
+  uploadedAt: string;
+  description?: string;
+  category?: string;
+  isPopular?: boolean;
+  isRecent?: boolean;
+  likesCount?: number;
 }
 
 export interface UserProfile {
@@ -131,6 +197,33 @@ export interface UserProfile {
   balance?: number;
   dataBalance?: number;
   createdAt: string;
+}
+
+export interface VoiceStyleItem {
+  id: string;
+  name: string;
+  bengaliName: string;
+  description: string;
+  icon: string;
+  badge?: string;
+  highpassFreq?: number;
+  lowpassFreq?: number;
+  lowShelfFreq?: number;
+  lowShelfGain?: number;
+  midPeakingFreq?: number;
+  midPeakingGain?: number;
+  midPeakingQ?: number;
+  presenceFreq?: number;
+  presenceGain?: number;
+  presenceQ?: number;
+  highShelfFreq?: number;
+  highShelfGain?: number;
+  compressorRatio?: number;
+  compressorThreshold?: number;
+  compressorKnee?: number;
+  reverbMix?: number;
+  reverbDelay?: number;
+  reverbDecay?: number;
 }
 
 
